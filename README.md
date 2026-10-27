@@ -53,9 +53,13 @@ Screenshots: put PNGs in docs/screenshots/ and uncomment this block.
 1. **Download** [`P-Island-1.3.zip`](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.3.zip).
 2. **Double-click the `.zip`** to unzip it, then **drag P Island into Applications**.
 3. **Open P Island** from Applications or Launchpad.
-4. macOS says it can't verify the developer, because P Island isn't sold through Apple. To allow it once:
-   - **macOS 15 Sequoia and later:** open **System Settings › Privacy & Security**, scroll down to *"P Island" was blocked…* and click **Open Anyway**, then **Open**.
-   - **macOS 14 Sonoma:** right-click P Island in Applications › **Open** › **Open**.
+4. **The first time, macOS blocks it.** You'll see *"P Island" Not Opened — Apple could not verify "P Island" is free of malware…* This is expected, see [Why does macOS block it?](#why-does-macos-block-it) below. To allow it once:
+   1. Click **Done** (not *Move to Trash*).
+   2. Open **System Settings › Privacy & Security** and scroll to the bottom.
+   3. Next to *"P Island" was blocked to protect your Mac*, click **Open Anyway**.
+   4. Enter your password or use Touch ID, then click **Open Anyway** again.
+
+   On **macOS 14 Sonoma** you can instead right-click P Island in Applications › **Open** › **Open**.
 
    <details><summary>Still says the app "is damaged"?</summary>
 
@@ -67,6 +71,12 @@ Screenshots: put PNGs in docs/screenshots/ and uncomment this block.
    </details>
 
 5. A capsule icon appears in the menu bar, and the **Settings** window opens on **Permissions**. Everything below is optional — give only what you want to use.
+
+### Why does macOS block it?
+
+Every app downloaded from the internet is checked by **Gatekeeper**. To pass without a warning, an app has to be signed with a paid Apple Developer ID and *notarized* (scanned by Apple). P Island is a free, open-source portfolio project signed with a personal certificate instead, so macOS asks you to confirm once. Most free apps on GitHub show the same message.
+
+You can read every line of the code in this repository, and P Island needs no internet access beyond weather and album covers (see [Privacy](#privacy)). After you allow it once, it opens normally from then on.
 
 ### Permissions
 

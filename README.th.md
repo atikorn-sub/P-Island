@@ -53,9 +53,13 @@
 1. **ดาวน์โหลด** ไฟล์ [`P-Island-1.3.zip`](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.3.zip)
 2. **ดับเบิลคลิกไฟล์ `.zip`** เพื่อแตกไฟล์ แล้ว**ลาก P Island ไปไว้ใน Applications**
 3. **เปิด P Island** จาก Applications หรือ Launchpad
-4. macOS จะแจ้งว่าตรวจสอบผู้พัฒนาไม่ได้ เพราะ P Island ไม่ได้ขายผ่าน Apple วิธีอนุญาต (ทำแค่ครั้งแรกครั้งเดียว)
-   - **macOS 15 Sequoia ขึ้นไป:** เปิด **System Settings › Privacy & Security** เลื่อนลงไปที่ *"P Island" was blocked…* กด **Open Anyway** แล้วกด **Open**
-   - **macOS 14 Sonoma:** คลิกขวาที่ P Island ใน Applications › **Open** › **Open**
+4. **ครั้งแรก macOS จะบล็อกไว้** จะขึ้นหน้าต่าง *"P Island" Not Opened — Apple could not verify "P Island" is free of malware…* เป็นเรื่องปกติ (ดู[ทำไม macOS ถึงบล็อก](#ทำไม-macos-ถึงบล็อก) ด้านล่าง) วิธีอนุญาต ทำแค่ครั้งเดียว
+   1. กด **Done** (อย่ากด *Move to Trash*)
+   2. เปิด **System Settings › Privacy & Security** แล้วเลื่อนลงไปล่างสุด
+   3. ตรงข้อความ *"P Island" was blocked to protect your Mac* กด **Open Anyway**
+   4. ใส่รหัสผ่านหรือใช้ Touch ID แล้วกด **Open Anyway** อีกครั้ง
+
+   ถ้าเป็น **macOS 14 Sonoma** คลิกขวาที่ P Island ใน Applications › **Open** › **Open** ได้เลย
 
    <details><summary>ยังขึ้นว่าแอป "is damaged" อยู่?</summary>
 
@@ -67,6 +71,12 @@
    </details>
 
 5. จะมีไอคอนแคปซูลขึ้นบนแถบเมนู และหน้าต่าง**การตั้งค่า**จะเปิดที่หมวด**สิทธิ์การเข้าถึง** ทุกสิทธิ์ด้านล่างไม่บังคับ เลือกให้เฉพาะที่อยากใช้ก็พอ
+
+### ทำไม macOS ถึงบล็อก
+
+ทุกแอปที่ดาวน์โหลดจากอินเทอร์เน็ตจะถูก **Gatekeeper** ของ macOS ตรวจก่อน แอปที่จะเปิดได้โดยไม่มีคำเตือนต้องเซ็นด้วย Apple Developer ID แบบเสียเงิน และผ่านการตรวจ (notarize) จาก Apple ส่วน P Island เป็นผลงานฟรีแบบโอเพนซอร์สที่เซ็นด้วยใบรับรองส่วนตัว macOS เลยให้คุณยืนยันเองหนึ่งครั้ง แอปฟรีบน GitHub ส่วนใหญ่ก็ขึ้นข้อความแบบเดียวกัน
+
+โค้ดทุกบรรทัดเปิดให้ดูได้ใน repo นี้ และ P Island ใช้อินเทอร์เน็ตแค่ดึงสภาพอากาศกับปกเพลงเท่านั้น (ดู[ความเป็นส่วนตัว](#ความเป็นส่วนตัว)) อนุญาตครั้งเดียวแล้วหลังจากนั้นจะเปิดได้ตามปกติ
 
 ### สิทธิ์ที่ใช้
 
