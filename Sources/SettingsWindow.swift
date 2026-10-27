@@ -2,7 +2,7 @@ import SwiftUI
 
 enum AppInfo {
     static let name = "P Island"
-    static let developer = "P"
+    static let developer = "Atikorn Subsuieng"
     static var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0" }
     static var build: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1" }
 }
