@@ -140,15 +140,27 @@ struct ProgressRow: View {
     }
 }
 
+/// Album art. When the picture changes (a new song) it flips over like a card: the old cover turns
+/// edge-on, the new one turns back in with a little bounce.
 struct ArtworkView: View {
     let image: NSImage?
     let size: CGFloat
     let radius: CGFloat
 
+    @State private var shown: NSImage?
+    @State private var angle: Double = 0
+
+    init(image: NSImage?, size: CGFloat, radius: CGFloat) {
+        self.image = image
+        self.size = size
+        self.radius = radius
+        _shown = State(initialValue: image)
+    }
+
     var body: some View {
         Group {
-            if let image {
-                Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
+            if let shown {
+                Image(nsImage: shown).resizable().aspectRatio(contentMode: .fill)
             } else {
                 ZStack {
                     LinearGradient(colors: [Color(white: 0.25), Color(white: 0.12)], startPoint: .top, endPoint: .bottom)
@@ -160,6 +172,22 @@ struct ArtworkView: View {
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
+        .onChange(of: image) { _, new in flip(to: new) }
+    }
+
+    private func flip(to new: NSImage?) {
+        guard UserDefaults.standard.bool(forKey: "artworkFlip") else {
+            shown = new
+            return
+        }
+        withAnimation(.easeIn(duration: 0.18)) { angle = 90 }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            // Swap while edge-on, then come in from the other side.
+            shown = new
+            angle = -90
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.68)) { angle = 0 }
+        }
     }
 }
 

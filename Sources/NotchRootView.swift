@@ -278,6 +278,7 @@ struct NotchHeader: View {
                     }
                     Button("ตั้งค่าสิทธิ์…") { state.showPermissions?() }
                     Toggle("คลื่นเสียงตามเพลงจริง (ใช้สิทธิ์เสียงระบบ)", isOn: $settings.liveWaveform)
+                    Toggle("พลิกปกเพลงตอนเปลี่ยนเพลง", isOn: $settings.artworkFlip)
                     Toggle("เก็บประวัติคลิปบอร์ด", isOn: $settings.clipboardHistory)
                     Button("เมืองสภาพอากาศ: \(state.weather.city)…") { state.weather.chooseCity() }
                     Divider()

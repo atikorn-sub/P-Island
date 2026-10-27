@@ -33,6 +33,10 @@ final class AppSettings: ObservableObject {
     @Published var liveWaveform: Bool {
         didSet { defaults.set(liveWaveform, forKey: "liveWaveform") }
     }
+    /// Album art flips over when the song changes (read by ArtworkView straight from UserDefaults).
+    @Published var artworkFlip: Bool {
+        didSet { defaults.set(artworkFlip, forKey: "artworkFlip") }
+    }
     /// While a Focus is on, hold back app notifications, song peeks and Bluetooth cards.
     @Published var respectFocus: Bool {
         didSet { defaults.set(respectFocus, forKey: "respectFocus") }
@@ -60,7 +64,9 @@ final class AppSettings: ObservableObject {
             "haptics": true, "batteryAlerts": true, "sizeScale": 1.0, "songPeek": true, "volumeHUD": true,
             "bluetoothAlerts": true, "meetingAlerts": true, "clipboardHistory": true,
             "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true, "respectFocus": true,
+            "artworkFlip": true,
         ])
+        artworkFlip = defaults.bool(forKey: "artworkFlip")
         respectFocus = defaults.bool(forKey: "respectFocus")
         showPermissionsAtLaunch = defaults.bool(forKey: "showPermissionsAtLaunch")
         appNotifications = defaults.bool(forKey: "appNotifications")
