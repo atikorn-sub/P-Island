@@ -164,109 +164,60 @@ final class PermissionsModel: ObservableObject {
     }
 }
 
-/// A regular window (unlike the notch panel) listing each permission with a button to grant it.
-final class PermissionsWindowController: NSObject, NSWindowDelegate {
-    let model: PermissionsModel
-    private var window: NSWindow?
-
-    init(model: PermissionsModel) {
-        self.model = model
-    }
-
-    func show() {
-        if window == nil {
-            let host = NSHostingController(rootView: PermissionsView(model: model, settings: model.state.settings))
-            let w = NSWindow(contentViewController: host)
-            w.title = "P Island — สิทธิ์การเข้าถึง"
-            w.styleMask = [.titled, .closable]
-            w.isReleasedWhenClosed = false
-            w.delegate = self
-            w.center()
-            window = w
-        }
-        model.startWatching()
-        NSApp.activate(ignoringOtherApps: true)
-        window?.makeKeyAndOrderFront(nil)
-    }
-
-    func windowWillClose(_ notification: Notification) {
-        model.stopWatching()
-    }
-}
-
-struct PermissionsView: View {
+/// Every permission with its live status and a button to grant it; the "สิทธิ์การเข้าถึง" settings pane.
+struct PermissionsList: View {
     @ObservedObject var model: PermissionsModel
     @ObservedObject var settings: AppSettings
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(spacing: 0) {
+            PermissionRow(symbol: "bell.badge.fill", color: .red, title: "Full Disk Access",
+                          reason: "แสดงแจ้งเตือนจากแอปอื่น ตอบ iMessage จากรอยบาก และรู้ว่าเปิดโหมด Focus อยู่",
+                          hint: model.fullDisk == .granted ? nil
+                              : "ลาก P Island จาก Finder ลงในรายการ แล้วเปิดสวิตช์ (ถ้ามีชื่อเดิมอยู่ ให้ลบออกก่อน)",
+                          state: model.fullDisk, action: model.fixFullDisk)
+            Divider()
+            PermissionRow(symbol: "calendar", color: .orange, title: "Calendar",
+                          reason: "นัดหมายวันนี้ ปฏิทินรายเดือน และปุ่มเข้าประชุม",
+                          state: model.calendar, action: model.fixCalendar)
+            Divider()
+            PermissionRow(symbol: "airpodspro", color: .blue, title: "Bluetooth",
+                          reason: "แจ้งตอน AirPods และอุปกรณ์บลูทูธเชื่อมต่อ พร้อม % แบต",
+                          state: model.bluetooth, action: model.fixBluetooth)
+            Divider()
+            PermissionRow(symbol: "waveform", color: .purple, title: "Speech Recognition",
+                          reason: "ถอดเสียงจากไฟล์เสียงหรือวิดีโอบนชั้นวางเป็นข้อความ",
+                          state: model.speech, action: model.fixSpeech)
+            ForEach(PermissionsModel.automationTargets, id: \.id) { target in
+                if NSWorkspace.shared.urlForApplication(withBundleIdentifier: target.id) != nil {
+                    Divider()
+                    PermissionRow(symbol: "applescript.fill", color: .gray, title: "ควบคุม \(target.name)",
+                                  reason: target.id == "com.apple.MobileSMS"
+                                      ? "ส่งข้อความตอบกลับ iMessage ที่คุณพิมพ์จากรอยบาก"
+                                      : "อ่านเพลงที่กำลังเล่นและกดเล่น/หยุด/ข้ามเพลง",
+                                  state: model.automation[target.id] ?? .unknown) {
+                        model.fixAutomation(target.id)
+                    }
+                }
+            }
+            Divider()
             HStack(spacing: 12) {
-                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 48, height: 48)
+                RowIcon(symbol: "chart.bar.fill", color: .green)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("ตั้งค่าสิทธิ์ของ P Island").font(.title2.weight(.semibold))
-                    Text("กดปุ่มด้านขวาของแต่ละรายการเพื่อเปิดสิทธิ์ สถานะจะอัปเดตเองทันที")
-                        .font(.callout).foregroundStyle(.secondary)
+                    Text("System Audio Recording").font(.body.weight(.medium))
+                    Text("คลื่นเสียงที่ขยับตามเพลงจริง เปิดสวิตช์แล้วเล่นเพลง macOS จะถามสิทธิ์เอง")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
-            }
-
-            VStack(spacing: 0) {
-                PermissionRow(symbol: "bell.badge.fill", color: .red, title: "Full Disk Access",
-                              reason: "แสดงแจ้งเตือนจากแอปอื่น ตอบ iMessage จากรอยบาก และรู้ว่าเปิดโหมด Focus อยู่",
-                              hint: model.fullDisk == .granted ? nil
-                                  : "ลาก P Island จาก Finder ลงในรายการ แล้วเปิดสวิตช์ (ถ้ามีชื่อเดิมอยู่ ให้ลบออกก่อน)",
-                              state: model.fullDisk, action: model.fixFullDisk)
-                Divider()
-                PermissionRow(symbol: "calendar", color: .orange, title: "Calendar",
-                              reason: "นัดหมายวันนี้ ปฏิทินรายเดือน และปุ่มเข้าประชุม",
-                              state: model.calendar, action: model.fixCalendar)
-                Divider()
-                PermissionRow(symbol: "airpodspro", color: .blue, title: "Bluetooth",
-                              reason: "แจ้งตอน AirPods และอุปกรณ์บลูทูธเชื่อมต่อ พร้อม % แบต",
-                              state: model.bluetooth, action: model.fixBluetooth)
-                Divider()
-                PermissionRow(symbol: "waveform", color: .purple, title: "Speech Recognition",
-                              reason: "ถอดเสียงจากไฟล์เสียงหรือวิดีโอบน Shelf เป็นข้อความ",
-                              state: model.speech, action: model.fixSpeech)
-                ForEach(PermissionsModel.automationTargets, id: \.id) { target in
-                    if NSWorkspace.shared.urlForApplication(withBundleIdentifier: target.id) != nil {
-                        Divider()
-                        PermissionRow(symbol: "applescript.fill", color: .gray, title: "ควบคุม \(target.name)",
-                                      reason: target.id == "com.apple.MobileSMS"
-                                          ? "ส่งข้อความตอบกลับ iMessage ที่คุณพิมพ์จากรอยบาก"
-                                          : "อ่านเพลงที่กำลังเล่นและกดเล่น/หยุด/ข้ามเพลง",
-                                      state: model.automation[target.id] ?? .unknown) {
-                            model.fixAutomation(target.id)
-                        }
-                    }
-                }
-                Divider()
-                HStack(spacing: 12) {
-                    RowIcon(symbol: "chart.bar.fill", color: .green)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("System Audio Recording").font(.body.weight(.medium))
-                        Text("คลื่นเสียงที่ขยับตามเพลงจริง เปิดสวิตช์แล้วเล่นเพลง macOS จะถามสิทธิ์เอง")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Toggle("", isOn: $settings.liveWaveform).toggleStyle(.switch).labelsHidden()
-                    Button("ตั้งค่า") { model.openAudioSettings() }
-                }
-                .padding(.vertical, 10)
-            }
-            .padding(.horizontal, 14)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Color(nsColor: .controlBackgroundColor)))
-
-            HStack {
-                Toggle("แสดงหน้านี้ตอนเปิดแอป ถ้ายังขาดสิทธิ์สำคัญ", isOn: $settings.showPermissionsAtLaunch)
-                    .font(.callout)
                 Spacer()
-                Button("เสร็จแล้ว") { NSApp.keyWindow?.close() }
-                    .keyboardShortcut(.defaultAction)
+                Toggle("", isOn: $settings.liveWaveform).toggleStyle(.switch).labelsHidden()
+                Button("ตั้งค่า") { model.openAudioSettings() }
             }
+            .padding(.vertical, 10)
         }
-        .padding(20)
-        .frame(width: 560)
-        .environment(\.locale, .thai)
+        .padding(.horizontal, 14)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color(nsColor: .controlBackgroundColor)))
+        .onAppear { model.startWatching() }
+        .onDisappear { model.stopWatching() }
     }
 }
 

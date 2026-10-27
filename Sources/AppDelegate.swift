@@ -7,7 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: NotchController!
     private var bluetooth: BluetoothManager!
     private var waveformObserver: AnyCancellable?
-    private var permissions: PermissionsWindowController!
+    private var settingsWindow: SettingsWindowController!
     private var statusItem: NSStatusItem!
     private var launchItem: NSMenuItem!
 
@@ -117,14 +117,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         bluetooth.start()
 
         let permissionsModel = PermissionsModel(state: state) { [weak self] in self?.bluetooth.start() }
-        permissions = PermissionsWindowController(model: permissionsModel)
-        state.showPermissions = { [weak self] in
+        settingsWindow = SettingsWindowController(state: state, permissions: permissionsModel)
+        state.showSettings = { [weak self] pane in
             self?.controller.close()
-            self?.permissions.show()
+            self?.settingsWindow.show(pane)
         }
-        // Missing something important (usually Full Disk Access after an update): walk the user through it.
+        // Missing something important (e.g. Full Disk Access was never given): walk the user through it.
         if settings.showPermissionsAtLaunch && permissionsModel.missingEssentials {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in self?.permissions.show() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in self?.settingsWindow.show(.permissions) }
         }
 
         // ⌃⌥I toggles the notch, ⌃⌥T jumps to the timer.
@@ -152,6 +152,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             Demo.runAlerts(state: state)
         }
 
+        // `--settings about` opens the settings window on that pane.
+        if let i = args.firstIndex(of: "--settings") {
+            let pane = i + 1 < args.count ? SettingsPane(rawValue: args[i + 1]) : nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in self?.settingsWindow.show(pane) }
+        }
+
         // Developer aid: `--open shelf` keeps the notch open on that tab.
         if let i = args.firstIndex(of: "--open"), i + 1 < args.count, let tab = NotchTab(rawValue: args[i + 1]) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -167,7 +173,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         menu.addItem(withTitle: "เปิดรอยบาก  ⌃⌥I", action: #selector(openNotch), keyEquivalent: "").target = self
         menu.addItem(withTitle: "เล่นเดโมฟีเจอร์", action: #selector(playDemo), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "ตั้งค่าสิทธิ์…", action: #selector(showPermissions), keyEquivalent: "").target = self
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "การตั้งค่า…", action: #selector(showSettings), keyEquivalent: ",").target = self
+        menu.addItem(withTitle: "สิทธิ์การเข้าถึง…", action: #selector(showPermissions), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "เกี่ยวกับ P Island", action: #selector(showAbout), keyEquivalent: "").target = self
         menu.addItem(.separator())
         launchItem = menu.addItem(withTitle: "เปิดตอนเข้าเครื่อง", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         launchItem.target = self
@@ -184,8 +193,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller.open(sticky: 2)
     }
 
+    @objc private func showSettings() {
+        settingsWindow.show()
+    }
+
     @objc private func showPermissions() {
-        permissions.show()
+        settingsWindow.show(.permissions)
+    }
+
+    @objc private func showAbout() {
+        settingsWindow.show(.about)
     }
 
     @objc private func playDemo() {

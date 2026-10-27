@@ -139,8 +139,8 @@ final class NotchState: ObservableObject {
 
     /// Set by the controller: makes the panel take keyboard input (for typing a reply).
     var requestKeyboard: (() -> Void)?
-    /// Set by the app delegate: opens the permissions window.
-    var showPermissions: (() -> Void)?
+    /// Set by the app delegate: opens the settings window, on a given pane or the last one shown.
+    var showSettings: ((SettingsPane?) -> Void)?
 
     private var transientWork: DispatchWorkItem?
     private var alertWork: DispatchWorkItem?

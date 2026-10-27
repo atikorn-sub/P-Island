@@ -260,41 +260,15 @@ struct NotchHeader: View {
                     }
                     .help(batteryHelp)
                 }
-                Menu {
-                    Picker("ขนาด", selection: $settings.sizeScale) {
-                        ForEach(AppSettings.sizeOptions, id: \.scale) { option in
-                            Text(option.name).tag(option.scale)
-                        }
-                    }
-                    Menu("แสดงที่รอยบาก") {
-                        Toggle("แจ้งเตือนจากแอปอื่น", isOn: $settings.appNotifications)
-                        Toggle("ชื่อเพลงตอนเปลี่ยนเพลง", isOn: $settings.songPeek)
-                        Toggle("ระดับเสียงและความสว่าง", isOn: $settings.volumeHUD)
-                        Toggle("แจ้งเตือนแบตเตอรี่", isOn: $settings.batteryAlerts)
-                        Toggle("อุปกรณ์บลูทูธ", isOn: $settings.bluetoothAlerts)
-                        Toggle("การประชุม", isOn: $settings.meetingAlerts)
-                        Divider()
-                        Toggle("เงียบเมื่อเปิดโหมด Focus", isOn: $settings.respectFocus)
-                    }
-                    Button("ตั้งค่าสิทธิ์…") { state.showPermissions?() }
-                    Toggle("คลื่นเสียงตามเพลงจริง (ใช้สิทธิ์เสียงระบบ)", isOn: $settings.liveWaveform)
-                    Toggle("พลิกปกเพลงตอนเปลี่ยนเพลง", isOn: $settings.artworkFlip)
-                    Toggle("เก็บประวัติคลิปบอร์ด", isOn: $settings.clipboardHistory)
-                    Button("เมืองสภาพอากาศ: \(state.weather.city)…") { state.weather.chooseCity() }
-                    Divider()
-                    Toggle("สั่นที่แทร็กแพด", isOn: $settings.haptics)
-                    Toggle("เปิดตอนเข้าเครื่อง", isOn: $settings.launchAtLogin)
-                    Divider()
-                    Text("ปุ่มลัด: ⌃⌥I เปิดรอยบาก · ⌃⌥T ตัวจับเวลา")
-                    Button("ออกจาก P Island") { NSApp.terminate(nil) }
-                } label: {
+                Button { state.showSettings?(nil) } label: {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.6))
+                        .frame(width: 22, height: 22)
+                        .contentShape(Rectangle())
                 }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
+                .buttonStyle(.plain)
+                .help("การตั้งค่า")
             }
         }
     }
