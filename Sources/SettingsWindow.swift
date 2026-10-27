@@ -183,6 +183,11 @@ private struct GeneralPane: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {
+                Picker(tr("ตอนเล่นเพลง", "While music plays"), selection: $settings.closedStyle) {
+                    Text(tr("ปีกเล็ก", "Small wings")).tag("wings")
+                    Text(tr("แถบยาว", "Slim bar")).tag("mini")
+                }
+                .pickerStyle(.segmented)
                 Picker(tr("รูปแบบ", "Style"), selection: $settings.notchStyle) {
                     Text(tr("ดำ", "Black")).tag("black")
                     Text(tr("กระจก", "Glass")).tag("glass")
@@ -226,13 +231,15 @@ private struct GeneralPane: View {
     }
 
     private var glassNote: String {
+        let bar = tr("แถบยาว: รอยบากยืดเป็นเครื่องเล่นเพลงบาง ๆ บนแถบเมนู กดเล่น/ข้ามเพลงได้ทันที (จะบังเมนูบางส่วนขณะเล่นเพลง) ",
+                     "Slim bar: the notch stretches into a thin player across the menu bar, with play and skip right there (it covers part of the menu bar while music plays). ")
         let kind: String
         if #available(macOS 26.0, *) {
             kind = tr("ใช้ Liquid Glass ของ macOS", "uses macOS Liquid Glass")
         } else {
             kind = tr("เป็นกระจกฝ้าแบบเลียนแบบ (Liquid Glass ของจริงจะเปิดใช้เองเมื่ออัปเดตเป็น macOS 26)", "is a frosted-glass look-alike (real Liquid Glass turns on by itself on macOS 26)")
         }
-        return tr("กระจกแสดงตอนกางรอยบากและตอนการ์ดยืดลงมา \(kind) ตอนหดจะเป็นสีดำเสมอเพื่อกลืนกับรอยบากจริง", "Glass shows when the notch opens and when cards drop down; it \(kind). Closed, the notch stays black to blend with the real one.")
+        return bar + tr("กระจกแสดงตอนกางรอยบากและตอนการ์ดยืดลงมา \(kind) ตอนหดจะเป็นสีดำเสมอเพื่อกลืนกับรอยบากจริง", "Glass shows when the notch opens and when cards drop down; it \(kind). Closed, the notch stays black to blend with the real one.")
     }
 }
 

@@ -33,6 +33,10 @@ final class AppSettings: ObservableObject {
     @Published var liveWaveform: Bool {
         didSet { defaults.set(liveWaveform, forKey: "liveWaveform") }
     }
+    /// "wings" (art and bars beside the camera) or "mini" (a slim player bar across the menu bar) while music plays.
+    @Published var closedStyle: String {
+        didSet { defaults.set(closedStyle, forKey: "closedStyle") }
+    }
     /// "black" or "glass": how the open panel and drop-down cards look. The closed notch is always black.
     @Published var notchStyle: String {
         didSet { defaults.set(notchStyle, forKey: "notchStyle") }
@@ -84,9 +88,10 @@ final class AppSettings: ObservableObject {
             "haptics": true, "batteryAlerts": true, "sizeScale": 1.0, "songPeek": true, "volumeHUD": true,
             "bluetoothAlerts": true, "meetingAlerts": true, "clipboardHistory": true,
             "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true, "respectFocus": true,
-            "artworkFlip": true, "notchStyle": "black", "glassTint": 0.25,
+            "artworkFlip": true, "notchStyle": "black", "glassTint": 0.25, "closedStyle": "wings",
         ])
         notchStyle = defaults.string(forKey: "notchStyle") ?? "black"
+        closedStyle = defaults.string(forKey: "closedStyle") ?? "wings"
         glassTint = defaults.double(forKey: "glassTint")
         artworkFlip = defaults.bool(forKey: "artworkFlip")
         respectFocus = defaults.bool(forKey: "respectFocus")

@@ -40,6 +40,7 @@ final class NotchController {
     private var dragChangeCount = NSPasteboard(name: .drag).changeCount
     private var sizeObserver: AnyCancellable?
     private var alertObserver: AnyCancellable?
+    private var miniObserver: AnyCancellable?
     private var swipeDistance: CGFloat = 0
     private var swipeUsed = false
 
@@ -77,6 +78,15 @@ final class NotchController {
         }
         state.requestKeyboard = { [weak self] in
             self?.panel.makeKey()
+        }
+        state.openPanel = { [weak self] in self?.open() }
+        // When the slim bar goes away under the pointer, let clicks reach the menu bar again.
+        miniObserver = state.music.objectWillChange.sink { [weak self] _ in
+            DispatchQueue.main.async {
+                guard let self, !self.state.isOpen, self.state.alert == nil,
+                      self.state.closedActivity != .miniPlayer else { return }
+                self.panel.ignoresMouseEvents = true
+            }
         }
     }
 
@@ -253,18 +263,35 @@ final class NotchController {
             let inside = topCenteredRect(state.closedSize).insetBy(dx: -6, dy: -6).contains(p)
             panel.ignoresMouseEvents = !inside
             state.holdAlert(inside || alert.keepsFocus)
-        } else if hoverRect.contains(p) {
-            guard openWork == nil else { return }
-            let work = DispatchWorkItem { [weak self] in
-                guard let self else { return }
-                self.openWork = nil
-                if self.hoverRect.contains(NSEvent.mouseLocation) { self.open() }
-            }
-            openWork = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: work)
+        } else if state.closedActivity == .miniPlayer {
+            // The slim bar's buttons are clickable in place; only the camera area opens the panel.
+            panel.ignoresMouseEvents = !topCenteredRect(state.closedSize).insetBy(dx: -4, dy: -4).contains(p)
+            scheduleOpen(if: cameraRect.contains(p)) { [weak self] in self?.cameraRect.contains(NSEvent.mouseLocation) ?? false }
         } else {
+            scheduleOpen(if: hoverRect.contains(p)) { [weak self] in self?.hoverRect.contains(NSEvent.mouseLocation) ?? false }
+        }
+    }
+
+    /// Opens after a short pause while the pointer stays put, so passing over the notch doesn't pop it open.
+    private func scheduleOpen(if inside: Bool, stillInside: @escaping () -> Bool) {
+        guard inside else {
             openWork?.cancel()
             openWork = nil
+            return
         }
+        guard openWork == nil else { return }
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.openWork = nil
+            if stillInside() { self.open() }
+        }
+        openWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: work)
+    }
+
+    /// The camera housing itself, plus a little room above.
+    private var cameraRect: NSRect {
+        let r = topCenteredRect(state.notchSize)
+        return NSRect(x: r.minX, y: r.minY - 2, width: r.width, height: r.height + 6)
     }
 }

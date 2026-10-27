@@ -104,6 +104,7 @@ enum ClosedActivity: Equatable {
     case music
     case timer
     case musicAndTimer
+    case miniPlayer
     case transient(TransientActivity)
     case alert(NotchAlert)
 }
@@ -139,6 +140,8 @@ final class NotchState: ObservableObject {
 
     /// Set by the controller: makes the panel take keyboard input (for typing a reply).
     var requestKeyboard: (() -> Void)?
+    /// Set by the controller: opens the full panel (e.g. clicking the song in the slim bar).
+    var openPanel: (() -> Void)?
     /// Set by the app delegate: opens the settings window, on a given pane or the last one shown.
     var showSettings: ((SettingsPane?) -> Void)?
 
@@ -162,6 +165,12 @@ final class NotchState: ObservableObject {
 
     var wingWidth: CGFloat { notchSize.height + 12 }
 
+    /// Each half of the slim music bar, beside the camera; kept inside the notch window.
+    var miniWingWidth: CGFloat {
+        let room = (openSize.width + 60 - notchSize.width) / 2 - Self.closedTopRadius - 4
+        return min(230 * scale, room)
+    }
+
     var scale: CGFloat { CGFloat(settings.sizeScale) }
 
     var openSize: CGSize {
@@ -171,6 +180,10 @@ final class NotchState: ObservableObject {
     var closedActivity: ClosedActivity {
         if let alert { return .alert(alert) }
         if let transient { return .transient(transient) }
+        // Slim bar: stays out a little while after pausing so play is still one click away.
+        if settings.closedStyle == "mini", music.hasTrack, music.isPlaying || music.recentlyPaused {
+            return .miniPlayer
+        }
         let playing = music.hasTrack && music.isPlaying
         if timer.isActive { return playing ? .musicAndTimer : .timer }
         if playing { return .music }
@@ -185,6 +198,8 @@ final class NotchState: ObservableObject {
             return CGSize(width: width, height: notchSize.height + alert.extraHeight * scale)
         case .none:
             return CGSize(width: notchSize.width + Self.closedTopRadius * 2, height: notchSize.height)
+        case .miniPlayer:
+            return CGSize(width: notchSize.width + miniWingWidth * 2 + Self.closedTopRadius * 2, height: notchSize.height)
         default:
             return CGSize(width: notchSize.width + wingWidth * 2 + Self.closedTopRadius * 2, height: notchSize.height)
         }

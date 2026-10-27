@@ -107,7 +107,22 @@ final class MusicManager: ObservableObject {
     @Published private(set) var title = ""
     @Published private(set) var artist = ""
     @Published private(set) var album = ""
-    @Published private(set) var isPlaying = false
+    @Published private(set) var isPlaying = false {
+        didSet {
+            guard isPlaying != oldValue else { return }
+            pausedAt = isPlaying ? nil : Date()
+            if !isPlaying {
+                // Let views re-check `recentlyPaused` once the grace period is over.
+                DispatchQueue.main.asyncAfter(deadline: .now() + Self.pauseGrace + 0.1) { [weak self] in
+                    self?.objectWillChange.send()
+                }
+            }
+        }
+    }
+    private var pausedAt: Date?
+    static let pauseGrace: TimeInterval = 30
+    /// Paused within the last 30 s (the slim bar stays out so play is one click away).
+    var recentlyPaused: Bool { pausedAt.map { Date().timeIntervalSince($0) < Self.pauseGrace } ?? false }
     @Published private(set) var duration: Double = 0
     @Published private(set) var artwork: NSImage?
     @Published private(set) var accent: Color = .white

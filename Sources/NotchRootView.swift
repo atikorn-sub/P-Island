@@ -32,6 +32,9 @@ struct NotchRootView: View {
             } else if case .alert(let alert) = activity {
                 AlertNotchView(state: state, alert: alert)
                     .transition(.opacity)
+            } else if activity == .miniPlayer {
+                MiniPlayerBar(state: state)
+                    .transition(.opacity)
             } else {
                 ClosedNotchView(state: state)
                     .transition(.opacity)
@@ -80,7 +83,7 @@ struct ClosedNotchView: View {
 
     @ViewBuilder private var leading: some View {
         switch state.closedActivity {
-        case .none, .alert:
+        case .none, .alert, .miniPlayer:
             EmptyView()
         case .music, .musicAndTimer:
             ArtworkView(image: music.artwork, trackID: music.trackID, size: h(0.62), radius: 6)
@@ -100,7 +103,7 @@ struct ClosedNotchView: View {
 
     @ViewBuilder private var trailing: some View {
         switch state.closedActivity {
-        case .none, .alert:
+        case .none, .alert, .miniPlayer:
             EmptyView()
         case .music:
             MusicBars(levels: state.audioLevels, color: music.accent).frame(height: h(0.42))
