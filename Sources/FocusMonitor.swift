@@ -12,12 +12,40 @@ final class FocusMonitor: ObservableObject {
 
     private let dir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/DoNotDisturb/DB")
     private var timer: Timer?
+    private var watcher: DispatchSourceFileSystemObject?
+    private var pendingRefresh: DispatchWorkItem?
 
     init() {
         refresh(notify: false)
-        let t = Timer(timeInterval: 3, repeats: true) { [weak self] _ in self?.refresh(notify: true) }
+        watchDirectory()
+        // Scheduled Focus starts without touching the files, and the watcher needs access to start; poll as a backstop.
+        let t = Timer(timeInterval: 15, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            if self.watcher == nil { self.watchDirectory() }
+            self.refresh(notify: true)
+        }
         RunLoop.main.add(t, forMode: .common)
         timer = t
+    }
+
+    /// macOS rewrites Assertions.json the moment a Focus is switched, so react to the folder changing
+    /// instead of polling; even a Focus that is on for only a second gets noticed.
+    private func watchDirectory() {
+        let fd = open(dir.path, O_EVTONLY)
+        guard fd >= 0 else { return } // no Full Disk Access yet
+        let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.write, .rename, .delete],
+                                                               queue: .main)
+        source.setEventHandler { [weak self] in self?.scheduleRefresh() }
+        source.setCancelHandler { close(fd) }
+        source.resume()
+        watcher = source
+    }
+
+    private func scheduleRefresh() {
+        pendingRefresh?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.refresh(notify: true) }
+        pendingRefresh = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: work)
     }
 
     func refresh(notify: Bool) {
@@ -33,14 +61,22 @@ final class FocusMonitor: ObservableObject {
         guard active != isActive || name != modeName else { return }
         isActive = active
         modeName = name
+        NSLog("%@", "Islet focus [change] active=\(active) name=\(name ?? "-")")
         if notify { onChange?(active, name) }
     }
 
     /// Logs the raw Focus files, for checking the format on a new macOS version (`--debug-focus`).
     func dumpForDebugging() {
+        let files = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
+        NSLog("%@", "Islet focus [files] \(files.sorted())")
         for file in ["Assertions.json", "ModeConfigurations.json"] {
+            // Shape first (keys and list sizes), then the tail where the newest records end up.
+            if let root = json(file), let data = (root["data"] as? [[String: Any]]) {
+                let shape = data.map { $0.map { "\($0.key)=\(($0.value as? [Any])?.count.description ?? "obj")" }.sorted() }
+                NSLog("%@", "Islet focus [\(file) shape] \(shape)")
+            }
             let text = (try? String(contentsOf: dir.appendingPathComponent(file), encoding: .utf8)) ?? "(unreadable)"
-            NSLog("%@", "Islet focus [\(file)] \(text.prefix(3000))")
+            NSLog("%@", "Islet focus [\(file) tail] \(text.suffix(1500))")
         }
         NSLog("%@", "Islet focus [state] active=\(isActive) name=\(modeName ?? "-")")
     }
