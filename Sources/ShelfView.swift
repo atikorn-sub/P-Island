@@ -136,6 +136,13 @@ struct ShelfItemView: View {
                     }
                 }
             }
+            if Transcriber.canTranscribe(item.url) {
+                Menu("Transcribe to text") {
+                    ForEach(Transcriber.languages, id: \.id) { language in
+                        Button(language.name) { shelf.transcribe(item, language: language.id) }
+                    }
+                }
+            }
             Divider()
             Button("Remove from Shelf") { shelf.remove(item) }
         }

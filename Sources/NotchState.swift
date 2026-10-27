@@ -62,13 +62,21 @@ enum NotchAlert: Equatable {
     case brightness(level: Float)
     case meeting(title: String, url: URL, start: Date)
     case bluetooth(name: String, kind: BluetoothKind, connected: Bool, battery: String?)
+    case notification(AppNotification, replying: Bool)
+    case info(symbol: String, title: String, subtitle: String)
 
     /// Cards with controls: hovering them keeps them open instead of opening the full panel.
     var isInteractive: Bool {
         switch self {
-        case .volume, .brightness, .meeting: return true
+        case .volume, .brightness, .meeting, .notification: return true
         default: return false
         }
+    }
+
+    /// Stays up even when the pointer leaves, e.g. while typing a reply.
+    var keepsFocus: Bool {
+        if case .notification(_, true) = self { return true }
+        return false
     }
 
     /// Height of the card below the physical notch, at 100 % size.
@@ -76,8 +84,17 @@ enum NotchAlert: Equatable {
         switch self {
         case .volume, .brightness: return 30
         case .nowPlaying: return 46
+        case .notification(let note, let replying):
+            if replying { return 100 }
+            return note.bundleID == MessagesReplier.bundleID ? 84 : 60
         default: return 52
         }
+    }
+
+    /// Width of the card at 100 % size.
+    var width: CGFloat {
+        if case .notification = self { return 400 }
+        return 340
     }
 }
 
@@ -107,11 +124,16 @@ final class NotchState: ObservableObject {
     let controls: SystemControls
     let clipboard: ClipboardManager
     let weather: WeatherManager
+    let notifications = NotificationsManager()
+    let audioLevels = AudioLevelMonitor()
 
     /// Open panel size at 100 %; the panel is laid out at this size and then scaled.
     static let baseOpenSize = CGSize(width: 640, height: 236)
     static let closedTopRadius: CGFloat = 6
     static let openTopRadius: CGFloat = 14
+
+    /// Set by the controller: makes the panel take keyboard input (for typing a reply).
+    var requestKeyboard: (() -> Void)?
 
     private var transientWork: DispatchWorkItem?
     private var alertWork: DispatchWorkItem?
@@ -152,7 +174,7 @@ final class NotchState: ObservableObject {
     var closedSize: CGSize {
         switch closedActivity {
         case .alert(let alert):
-            let width = max(notchSize.width + wingWidth * 2, 340 * scale) + Self.closedTopRadius * 2
+            let width = max(notchSize.width + wingWidth * 2, alert.width * scale) + Self.closedTopRadius * 2
             return CGSize(width: width, height: notchSize.height + alert.extraHeight * scale)
         case .none:
             return CGSize(width: notchSize.width + Self.closedTopRadius * 2, height: notchSize.height)

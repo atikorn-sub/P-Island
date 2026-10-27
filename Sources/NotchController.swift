@@ -73,6 +73,10 @@ final class NotchController {
             guard let self, alert == nil, !self.state.isOpen else { return }
             self.panel.ignoresMouseEvents = true
             self.state.holdAlert(false)
+            self.giveKeyboardBack()
+        }
+        state.requestKeyboard = { [weak self] in
+            self?.panel.makeKey()
         }
     }
 
@@ -141,11 +145,14 @@ final class NotchController {
         guard state.isOpen else { return }
         state.isOpen = false
         panel.ignoresMouseEvents = true
-        // After typing in the panel (e.g. clipboard search), hand the keyboard back to the app underneath.
-        if panel.isKeyWindow {
-            panel.resignKey()
-            NSWorkspace.shared.frontmostApplication?.activate()
-        }
+        giveKeyboardBack()
+    }
+
+    /// After typing in the panel (clipboard search, a reply), hand the keyboard back to the app underneath.
+    private func giveKeyboardBack() {
+        guard panel.isKeyWindow else { return }
+        panel.resignKey()
+        NSWorkspace.shared.frontmostApplication?.activate()
     }
 
     /// Hotkey behaviour: open on `tab`, or close if it is already showing.
@@ -245,7 +252,7 @@ final class NotchController {
             // Volume, brightness and meeting cards take the pointer themselves instead of opening the panel.
             let inside = topCenteredRect(state.closedSize).insetBy(dx: -6, dy: -6).contains(p)
             panel.ignoresMouseEvents = !inside
-            state.holdAlert(inside)
+            state.holdAlert(inside || alert.keepsFocus)
         } else if hoverRect.contains(p) {
             guard openWork == nil else { return }
             let work = DispatchWorkItem { [weak self] in

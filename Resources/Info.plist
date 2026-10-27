@@ -24,11 +24,15 @@
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>P Island reads the current song from Music and Spotify and controls playback from the notch.</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>P Island listens to what your Mac is playing to animate the music waveform. Nothing is recorded or saved.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>P Island shows when your AirPods and other Bluetooth devices connect, with their battery levels.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>P Island shows today's upcoming events in the notch.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>P Island turns speech in your audio and video files into text when you ask it to.</string>
 </dict>
 </plist>

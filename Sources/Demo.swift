@@ -62,6 +62,9 @@ enum Demo {
             ("bluetooth", .bluetooth(name: "AirPods Pro", kind: .airpodsPro, connected: true,
                                      battery: "L 80% · R 85% · เคส 60%"), 3.5),
             ("meeting", .meeting(title: "ประชุมทีม (ตัวอย่าง)", url: meetingURL, start: Date().addingTimeInterval(60)), 4.5),
+            ("notification", .notification(AppNotification(bundleID: MessagesReplier.bundleID, title: "ตัวอย่าง",
+                                                           subtitle: "", body: "นี่คือตัวอย่างแจ้งเตือนจาก Messages",
+                                                           date: Date()), replying: false), 5),
             ("battery estimate", .batteryEstimate(level: state.battery.level, minutes: 205), 3.5),
         ]
         var t = 0.8

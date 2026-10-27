@@ -95,6 +95,26 @@ final class ShelfManager: ObservableObject {
         }
     }
 
+    /// Shows a short message in the notch (title, subtitle, success).
+    var onMessage: ((String, String, Bool) -> Void)?
+
+    func transcribe(_ item: ShelfItem, language: String) {
+        converting.insert(item.url)
+        Transcriber.transcribe(item.url, language: language) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.converting.remove(item.url)
+                switch result {
+                case .success(let url):
+                    self.add([url])
+                    self.onMessage?("ถอดเสียงเสร็จแล้ว", url.lastPathComponent, true)
+                case .failure(let error):
+                    self.onMessage?("ถอดเสียงไม่สำเร็จ", error.message, false)
+                }
+            }
+        }
+    }
+
     var imageItems: [ShelfItem] {
         items.filter { UTType(filenameExtension: $0.url.pathExtension)?.conforms(to: .image) == true }
     }

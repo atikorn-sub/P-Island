@@ -91,7 +91,7 @@ struct ClosedNotchView: View {
         case .none, .alert:
             EmptyView()
         case .music:
-            EqualizerBars(color: music.accent).frame(height: h(0.42))
+            MusicBars(levels: state.audioLevels, color: music.accent).frame(height: h(0.42))
         case .timer, .musicAndTimer:
             Text(TimerManager.format(timer.remaining))
                 .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
@@ -140,6 +140,30 @@ struct EqualizerBars: View {
                 .frame(width: geo.size.width, height: geo.size.height)
             }
             .frame(width: 20)
+        }
+    }
+}
+
+/// Bars that follow the real system audio when the live waveform is on, otherwise a gentle animation.
+struct MusicBars: View {
+    @ObservedObject var levels: AudioLevelMonitor
+    var color: Color
+
+    var body: some View {
+        if levels.isRunning {
+            GeometryReader { geo in
+                HStack(alignment: .center, spacing: 2) {
+                    ForEach(0..<4, id: \.self) { i in
+                        Capsule().fill(color)
+                            .frame(width: 3, height: max(3, geo.size.height * CGFloat(0.2 + 0.8 * levels.levels[i])))
+                    }
+                }
+                .frame(width: geo.size.width, height: geo.size.height)
+                .animation(.linear(duration: 0.06), value: levels.levels)
+            }
+            .frame(width: 20)
+        } else {
+            EqualizerBars(color: color)
         }
     }
 }
@@ -217,12 +241,19 @@ struct NotchHeader: View {
                         }
                     }
                     Menu("Show in notch") {
+                        Toggle("App notifications", isOn: $settings.appNotifications)
                         Toggle("Song changes", isOn: $settings.songPeek)
                         Toggle("Volume & brightness", isOn: $settings.volumeHUD)
                         Toggle("Battery alerts", isOn: $settings.batteryAlerts)
                         Toggle("Bluetooth devices", isOn: $settings.bluetoothAlerts)
                         Toggle("Meetings", isOn: $settings.meetingAlerts)
                     }
+                    if state.notifications.access == .needsFullDiskAccess {
+                        Button("Allow Full Disk Access for notifications…") {
+                            state.notifications.openFullDiskAccessSettings()
+                        }
+                    }
+                    Toggle("Live waveform (uses audio permission)", isOn: $settings.liveWaveform)
                     Toggle("Clipboard history", isOn: $settings.clipboardHistory)
                     Button("Weather city: \(state.weather.city)…") { state.weather.chooseCity() }
                     Divider()

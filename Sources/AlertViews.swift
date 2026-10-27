@@ -6,9 +6,17 @@ struct AlertNotchView: View {
     let alert: NotchAlert
 
     var body: some View {
+        if case .notification(let note, let replying) = alert {
+            NotificationCard(state: state, note: note, replying: replying)
+        } else {
+            standardCard
+        }
+    }
+
+    private var standardCard: some View {
         let size = state.closedSize
         let s = state.scale
-        VStack(spacing: 2 * s) {
+        return VStack(spacing: 2 * s) {
             HStack(spacing: 0) {
                 leading
                 Spacer(minLength: state.notchSize.width + 12)
@@ -48,6 +56,12 @@ struct AlertNotchView: View {
             Image(systemName: kind.symbol)
                 .font(.system(size: 15 * rowScale, weight: .semibold))
                 .foregroundStyle(connected ? .white : .white.opacity(0.5))
+        case .info(let symbol, _, _):
+            Image(systemName: symbol)
+                .font(.system(size: 14 * rowScale, weight: .semibold))
+                .foregroundStyle(.blue)
+        case .notification:
+            EmptyView()
         }
     }
 
@@ -58,7 +72,7 @@ struct AlertNotchView: View {
         case .fullyCharged:
             percent(100, color: .green)
         case .nowPlaying:
-            EqualizerBars(color: state.music.accent).frame(height: state.notchSize.height * 0.42)
+            MusicBars(levels: state.audioLevels, color: state.music.accent).frame(height: state.notchSize.height * 0.42)
         case .volume(let level, let muted):
             percent(muted ? 0 : Int((level * 100).rounded()), color: .white)
         case .brightness(let level):
@@ -71,6 +85,12 @@ struct AlertNotchView: View {
             Image(systemName: connected ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .font(.system(size: 15 * rowScale))
                 .foregroundStyle(connected ? .blue : .white.opacity(0.5))
+        case .info:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 15 * rowScale))
+                .foregroundStyle(.green)
+        case .notification:
+            EmptyView()
         }
     }
 
@@ -121,6 +141,10 @@ struct AlertNotchView: View {
         case .bluetooth(let name, _, let connected, let battery):
             message(name, connected ? (battery.map { "เชื่อมต่อแล้ว · \($0)" } ?? "เชื่อมต่อแล้ว") : "ตัดการเชื่อมต่อแล้ว",
                     color: .white)
+        case .info(_, let title, let subtitle):
+            message(title, subtitle, color: .white)
+        case .notification:
+            EmptyView()
         }
     }
 

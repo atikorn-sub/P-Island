@@ -1,10 +1,12 @@
 import AppKit
 import Carbon
+import Combine
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var state: NotchState!
     private var controller: NotchController!
     private var bluetooth: BluetoothManager!
+    private var waveformObserver: AnyCancellable?
     private var statusItem: NSStatusItem!
     private var launchItem: NSMenuItem!
 
@@ -76,12 +78,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSSound(named: "Glass")?.play()
         }
         state.clipboard.isEnabled = { [weak settings] in settings?.clipboardHistory ?? false }
+        state.shelf.onMessage = { [weak state] title, subtitle, ok in
+            state?.showAlert(.info(symbol: ok ? "text.bubble.fill" : "exclamationmark.triangle.fill",
+                                   title: title, subtitle: subtitle), seconds: 4)
+        }
+
+        state.notifications.isEnabled = { [weak settings] in settings?.appNotifications ?? false }
+        state.notifications.onNotification = { [weak state] note in
+            guard let state, !state.isOpen else { return }
+            // Don't cover a reply that is being typed.
+            if case .notification(_, true) = state.alert { return }
+            state.showAlert(.notification(note, replying: false), seconds: 6)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak state] in
+            guard let state, settings.appNotifications, state.notifications.access == .needsFullDiskAccess,
+                  !UserDefaults.standard.bool(forKey: "askedFullDiskAccess") else { return }
+            UserDefaults.standard.set(true, forKey: "askedFullDiskAccess")
+            state.showAlert(.info(symbol: "bell.badge.fill", title: "อยากให้แจ้งเตือนขึ้นที่รอยบาก?",
+                                  subtitle: "ให้สิทธิ์ Full Disk Access ได้ที่ ⚙️ ในรอยบาก"), seconds: 7)
+        }
+
+        // The live waveform listens only while music is playing and the option is on.
+        waveformObserver = state.music.$isPlaying.combineLatest(settings.$liveWaveform)
+            .sink { [weak state] playing, enabled in
+                DispatchQueue.main.async {
+                    guard let levels = state?.audioLevels else { return }
+                    if playing && enabled { levels.start() } else { levels.stop() }
+                }
+            }
 
         bluetooth = BluetoothManager()
         bluetooth.onEvent = { [weak state] name, kind, connected, batteryText in
             guard let state, state.settings.bluetoothAlerts, !state.isOpen else { return }
             state.showAlert(.bluetooth(name: name, kind: kind, connected: connected, battery: batteryText), seconds: 3.5)
         }
+        bluetooth.start()
 
         // ⌃⌥I toggles the notch, ⌃⌥T jumps to the timer.
         HotKeys.register(keyCode: kVK_ANSI_I, modifiers: controlKey | optionKey) { [weak controller] in

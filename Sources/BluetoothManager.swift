@@ -1,20 +1,38 @@
+import CoreBluetooth
 import Foundation
 import IOBluetooth
 
 /// Reports Bluetooth devices connecting and disconnecting, with AirPods battery levels when available.
+/// Runs on its own thread: the first IOBluetooth call waits for the Bluetooth permission answer,
+/// and doing that on the main thread would freeze the whole app until the user responds.
 final class BluetoothManager: NSObject {
-    /// (name, kind, connected, battery text such as "L 80% · R 85% · เคส 60%")
+    /// (name, kind, connected, battery text such as "L 80% · R 85% · เคส 60%"); called on the main queue.
     var onEvent: ((String, BluetoothKind, Bool, String?) -> Void)?
 
+    // Touched only on the Bluetooth thread.
     private var connectNotification: IOBluetoothUserNotification?
     private var disconnectNotifications: [String: IOBluetoothUserNotification] = [:]
+    private var thread: Thread?
     /// Devices already connected at launch are reported to us too; stay quiet about those.
-    private let quietUntil = Date().addingTimeInterval(4)
+    private var quietUntil = Date.distantFuture
 
-    override init() {
-        super.init()
-        connectNotification = IOBluetoothDevice.register(forConnectNotifications: self,
-                                                         selector: #selector(deviceConnected(_:device:)))
+    func start() {
+        guard thread == nil else { return }
+        // Asking again after a "Don't Allow" can't succeed, so don't try.
+        guard CBManager.authorization != .denied, CBManager.authorization != .restricted else { return }
+        let thread = Thread { [weak self] in
+            guard let self else { return }
+            self.connectNotification = IOBluetoothDevice.register(forConnectNotifications: self,
+                                                                  selector: #selector(self.deviceConnected(_:device:)))
+            self.quietUntil = Date().addingTimeInterval(4)
+            RunLoop.current.add(NSMachPort(), forMode: .default) // keeps the run loop alive for callbacks
+            while !Thread.current.isCancelled {
+                RunLoop.current.run(mode: .default, before: .distantFuture)
+            }
+        }
+        thread.name = "islet.bluetooth"
+        thread.start()
+        self.thread = thread
     }
 
     @objc private func deviceConnected(_ note: IOBluetoothUserNotification, device: IOBluetoothDevice) {

@@ -26,6 +26,13 @@ final class AppSettings: ObservableObject {
     @Published var clipboardHistory: Bool {
         didSet { defaults.set(clipboardHistory, forKey: "clipboardHistory") }
     }
+    @Published var appNotifications: Bool {
+        didSet { defaults.set(appNotifications, forKey: "appNotifications") }
+    }
+    /// Off by default: turning it on asks for the System Audio Recording permission.
+    @Published var liveWaveform: Bool {
+        didSet { defaults.set(liveWaveform, forKey: "liveWaveform") }
+    }
     @Published var launchAtLogin: Bool {
         didSet {
             guard !syncingLogin, launchAtLogin != oldValue else { return }
@@ -45,7 +52,10 @@ final class AppSettings: ObservableObject {
         defaults.register(defaults: [
             "haptics": true, "batteryAlerts": true, "sizeScale": 1.0, "songPeek": true, "volumeHUD": true,
             "bluetoothAlerts": true, "meetingAlerts": true, "clipboardHistory": true,
+            "appNotifications": true, "liveWaveform": false,
         ])
+        appNotifications = defaults.bool(forKey: "appNotifications")
+        liveWaveform = defaults.bool(forKey: "liveWaveform")
         haptics = defaults.bool(forKey: "haptics")
         batteryAlerts = defaults.bool(forKey: "batteryAlerts")
         songPeek = defaults.bool(forKey: "songPeek")
