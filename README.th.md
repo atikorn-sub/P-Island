@@ -50,8 +50,8 @@
 
 **ต้องมี:** macOS 14 Sonoma ขึ้นไป ใช้ได้กับ Mac ทุกรุ่น (ชิป Apple หรือ Intel) มีรอยบากจะสวยที่สุด แต่ไม่มีก็ใช้ได้
 
-1. **ดาวน์โหลด** ไฟล์ `P-Island-x.y.dmg` จาก[เวอร์ชันล่าสุด](../../releases/latest)
-2. **เปิด**ไฟล์ `.dmg` แล้ว**ลาก P Island ไปวางบน Applications**
+1. **ดาวน์โหลด** ไฟล์ `P-Island-x.y.zip` (หรือ `.dmg`) จาก[เวอร์ชันล่าสุด](../../releases/latest)
+2. **ดับเบิลคลิกไฟล์ `.zip`** เพื่อแตกไฟล์ แล้ว**ลาก P Island ไปไว้ใน Applications** (ถ้าใช้ `.dmg` ให้เปิดไฟล์แล้วลาก P Island ไปวางบนทางลัด Applications)
 3. **เปิด P Island** จาก Applications หรือ Launchpad
 4. macOS จะแจ้งว่าตรวจสอบผู้พัฒนาไม่ได้ เพราะ P Island ไม่ได้ขายผ่าน Apple วิธีอนุญาต (ทำแค่ครั้งแรกครั้งเดียว)
    - **macOS 15 Sequoia ขึ้นไป:** เปิด **System Settings › Privacy & Security** เลื่อนลงไปที่ *"P Island" was blocked…* กด **Open Anyway** แล้วกด **Open**
@@ -130,7 +130,7 @@ xcode-select --install          # ทำครั้งเดียว
 git clone https://github.com/atikorn-sub/P-Island.git
 cd P-Island
 ./build.sh --install            # build แล้วติดตั้งลง /Applications
-./build.sh --release            # ได้ .dmg แบบ universal และ .zip ของส่วนขยายใน dist/
+./build.sh --release            # ได้แอปแบบ universal เป็น .zip/.dmg และ .zip ของส่วนขยายใน dist/
 ```
 
 ถ้าใน Keychain มีใบรับรองชื่อ **P Island Developer** ตัว build จะเซ็นแอปด้วยใบรับรองนั้น (สร้างได้ที่ Keychain Access › Certificate Assistant › Create a Certificate… เลือกประเภท *Code Signing*) จะทำให้สิทธิ์ของ macOS ไม่หายเวลา build ใหม่ ถ้าไม่มี จะเซ็นแบบ ad-hoc แทน

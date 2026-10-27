@@ -50,8 +50,8 @@ Screenshots: put PNGs in docs/screenshots/ and uncomment this block.
 
 **You need:** macOS 14 Sonoma or later, on any Mac (Apple silicon or Intel). A notch is nice but not required.
 
-1. **Download** `P-Island-x.y.dmg` from the [latest release](../../releases/latest).
-2. **Open** the `.dmg` and **drag P Island onto Applications**.
+1. **Download** `P-Island-x.y.zip` (or `.dmg`) from the [latest release](../../releases/latest).
+2. **Double-click the `.zip`** to unzip it, then **drag P Island into Applications**. (With the `.dmg`: open it and drag P Island onto the Applications shortcut.)
 3. **Open P Island** from Applications or Launchpad.
 4. macOS says it can't verify the developer, because P Island isn't sold through Apple. To allow it once:
    - **macOS 15 Sequoia and later:** open **System Settings › Privacy & Security**, scroll down to *"P Island" was blocked…* and click **Open Anyway**, then **Open**.
@@ -130,7 +130,7 @@ xcode-select --install          # once
 git clone https://github.com/atikorn-sub/P-Island.git
 cd P-Island
 ./build.sh --install            # builds and installs to /Applications
-./build.sh --release            # universal .dmg and extension .zip in dist/
+./build.sh --release            # universal app .zip/.dmg and extension .zip in dist/
 ```
 
 Builds are signed with a certificate named **P Island Developer** if your keychain has one (Keychain Access › Certificate Assistant › Create a Certificate…, type *Code Signing*). That keeps macOS permissions across rebuilds; without it the build is signed ad-hoc.

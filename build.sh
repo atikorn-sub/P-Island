@@ -74,10 +74,14 @@ if [ "$MODE" = "--release" ]; then
     "$DIST/P-Island-$VERSION.dmg" >/dev/null
   rm -rf "$STAGE"
 
+  # The app on its own as a .zip too: smaller to upload, and unzips straight to "P Island.app".
+  ditto -c -k --sequesterRsrc --keepParent "$APP" "$DIST/P-Island-$VERSION.zip"
+
   # The Chrome extension for YouTube Music, ready for "Load unpacked" after unzipping.
   (cd ChromeExtension && zip -qr "../$DIST/P-Island-YouTube-Music-Extension.zip" . -x ".*")
 
   (cd "$DIST" && shasum -a 256 * > SHA256SUMS.txt)
+  "$LSREGISTER" -u "$APP" 2>/dev/null || true
   echo "Release files in $DIST/:"
   ls -lh "$DIST"
 fi
