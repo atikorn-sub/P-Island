@@ -146,7 +146,7 @@ final class YouTubeMusicBridge {
         }
         let new = message.state
         if old?.title != new?.title || old?.artist != new?.artist || old?.playing != new?.playing {
-            NSLog("%@", "Islet music [YouTube Music] \(new.map { "\($0.playing ? "playing" : "paused"): \($0.title) — \($0.artist)" } ?? "(no track)")")
+            NSLog("%@", "Islet music [YouTube Music] \(new.map { "\($0.playing ? "playing" : "paused"): \($0.title) — \($0.artist) [\(TimerManager.format($0.position)) / \(TimerManager.format($0.duration))]" } ?? "(no track)")")
             notify()
         }
     }
