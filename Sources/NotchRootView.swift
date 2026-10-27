@@ -79,7 +79,7 @@ struct ClosedNotchView: View {
         case .none, .alert:
             EmptyView()
         case .music, .musicAndTimer:
-            ArtworkView(image: music.artwork, size: h(0.62), radius: 6)
+            ArtworkView(image: music.artwork, trackID: music.trackID, size: h(0.62), radius: 6)
                 .onTapGesture { music.openPlayer() }
         case .timer:
             Image(systemName: "timer").font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)

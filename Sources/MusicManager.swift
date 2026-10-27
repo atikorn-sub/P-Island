@@ -127,6 +127,8 @@ final class MusicManager: ObservableObject {
     private var scripts: [String: NSAppleScript] = [:] // only touched on `queue`
 
     var hasTrack: Bool { player != nil && !title.isEmpty }
+    /// Changes exactly when the song changes (used to flip the cover once per song).
+    var trackID: String { "\(player?.rawValue ?? "")|\(title)|\(artist)" }
     var installedPlayers: [MusicPlayer] { MusicPlayer.allCases.filter { $0.appURL != nil } }
 
     init() {

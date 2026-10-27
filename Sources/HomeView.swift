@@ -24,7 +24,7 @@ struct NowPlayingCard: View {
     var body: some View {
         if music.hasTrack {
             HStack(spacing: 14) {
-                ArtworkView(image: music.artwork, size: 112, radius: 16)
+                ArtworkView(image: music.artwork, trackID: music.trackID, size: 112, radius: 16)
                     .overlay(alignment: .bottomTrailing) { playerBadge }
                     .onTapGesture { music.openPlayer() }
                 VStack(alignment: .leading, spacing: 2) {
@@ -140,21 +140,28 @@ struct ProgressRow: View {
     }
 }
 
-/// Album art. When the picture changes (a new song) it flips over like a card: the old cover turns
-/// edge-on, the new one turns back in with a little bounce.
+/// Album art. On a new song it flips over once like a card: the old cover turns edge-on,
+/// the new one turns back in with a little bounce.
 struct ArtworkView: View {
     let image: NSImage?
+    /// Identifies the song; the flip happens once per song, however many times its cover image updates.
+    var trackID = ""
     let size: CGFloat
     let radius: CGFloat
 
     @State private var shown: NSImage?
     @State private var angle: Double = 0
+    /// The song whose cover is showing (or is flipping in).
+    @State private var flippedFor: String
+    @State private var fallback: DispatchWorkItem?
 
-    init(image: NSImage?, size: CGFloat, radius: CGFloat) {
+    init(image: NSImage?, trackID: String = "", size: CGFloat, radius: CGFloat) {
         self.image = image
+        self.trackID = trackID
         self.size = size
         self.radius = radius
         _shown = State(initialValue: image)
+        _flippedFor = State(initialValue: trackID)
     }
 
     var body: some View {
@@ -173,10 +180,34 @@ struct ArtworkView: View {
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
-        .onChange(of: image) { _, new in flip(to: new) }
+        .onChange(of: trackID) { _, _ in songChanged() }
+        .onChange(of: image) { _, new in imageChanged(new) }
+    }
+
+    private func songChanged() {
+        // Wait for the new cover; if none turns up, turn over to the blank cover.
+        fallback?.cancel()
+        let song = trackID
+        let work = DispatchWorkItem { [self] in
+            if flippedFor != song { flip(to: nil) }
+        }
+        fallback = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: work)
+    }
+
+    private func imageChanged(_ new: NSImage?) {
+        if flippedFor != trackID {
+            guard new != nil else { return } // the new song's cover is still loading
+            fallback?.cancel()
+            flip(to: new)
+        } else {
+            // Same song, e.g. a sharper copy of the cover arrived: swap quietly, no second flip.
+            shown = new
+        }
     }
 
     private func flip(to new: NSImage?) {
+        flippedFor = trackID
         guard UserDefaults.standard.bool(forKey: "artworkFlip") else {
             shown = new
             return

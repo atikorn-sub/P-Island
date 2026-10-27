@@ -183,7 +183,7 @@ struct NowPlayingThumb: View {
     let size: CGFloat
 
     var body: some View {
-        ArtworkView(image: music.artwork, size: size, radius: 6)
+        ArtworkView(image: music.artwork, trackID: music.trackID, size: size, radius: 6)
     }
 }
 
