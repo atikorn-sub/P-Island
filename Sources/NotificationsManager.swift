@@ -22,9 +22,10 @@ final class NotificationsManager: ObservableObject {
     private var db: OpaquePointer?
     private var lastRecordID: Int64 = -1
     private var timer: Timer?
+    private var deniedTicks = 0
     private let ownBundleID = Bundle.main.bundleIdentifier ?? ""
 
-    private static let path = FileManager.default.homeDirectoryForCurrentUser
+    static let databasePath = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Group Containers/group.com.apple.usernoted/db2/db").path
 
     init() {
@@ -42,9 +43,14 @@ final class NotificationsManager: ObservableObject {
 
     private func openIfNeeded() -> Bool {
         if db != nil { return true }
+        // Without access every attempt is logged by the system, so only retry every 10 s until granted.
+        if access == .needsFullDiskAccess {
+            deniedTicks += 1
+            guard deniedTicks % 5 == 0 else { return false }
+        }
         var handle: OpaquePointer?
         let flags = SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX
-        guard sqlite3_open_v2(Self.path, &handle, flags, nil) == SQLITE_OK,
+        guard sqlite3_open_v2(Self.databasePath, &handle, flags, nil) == SQLITE_OK,
               sqlite3_exec(handle, "SELECT 1 FROM record LIMIT 1", nil, nil, nil) == SQLITE_OK else {
             sqlite3_close(handle)
             if access != .needsFullDiskAccess { access = .needsFullDiskAccess }

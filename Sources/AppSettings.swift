@@ -33,6 +33,9 @@ final class AppSettings: ObservableObject {
     @Published var liveWaveform: Bool {
         didSet { defaults.set(liveWaveform, forKey: "liveWaveform") }
     }
+    @Published var showPermissionsAtLaunch: Bool {
+        didSet { defaults.set(showPermissionsAtLaunch, forKey: "showPermissionsAtLaunch") }
+    }
     @Published var launchAtLogin: Bool {
         didSet {
             guard !syncingLogin, launchAtLogin != oldValue else { return }
@@ -52,8 +55,9 @@ final class AppSettings: ObservableObject {
         defaults.register(defaults: [
             "haptics": true, "batteryAlerts": true, "sizeScale": 1.0, "songPeek": true, "volumeHUD": true,
             "bluetoothAlerts": true, "meetingAlerts": true, "clipboardHistory": true,
-            "appNotifications": true, "liveWaveform": false,
+            "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true,
         ])
+        showPermissionsAtLaunch = defaults.bool(forKey: "showPermissionsAtLaunch")
         appNotifications = defaults.bool(forKey: "appNotifications")
         liveWaveform = defaults.bool(forKey: "liveWaveform")
         haptics = defaults.bool(forKey: "haptics")

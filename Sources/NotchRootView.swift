@@ -248,11 +248,7 @@ struct NotchHeader: View {
                         Toggle("Bluetooth devices", isOn: $settings.bluetoothAlerts)
                         Toggle("Meetings", isOn: $settings.meetingAlerts)
                     }
-                    if state.notifications.access == .needsFullDiskAccess {
-                        Button("Allow Full Disk Access for notifications…") {
-                            state.notifications.openFullDiskAccessSettings()
-                        }
-                    }
+                    Button("Permissions…") { state.showPermissions?() }
                     Toggle("Live waveform (uses audio permission)", isOn: $settings.liveWaveform)
                     Toggle("Clipboard history", isOn: $settings.clipboardHistory)
                     Button("Weather city: \(state.weather.city)…") { state.weather.chooseCity() }

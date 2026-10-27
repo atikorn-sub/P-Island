@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: NotchController!
     private var bluetooth: BluetoothManager!
     private var waveformObserver: AnyCancellable?
+    private var permissions: PermissionsWindowController!
     private var statusItem: NSStatusItem!
     private var launchItem: NSMenuItem!
 
@@ -90,13 +91,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if case .notification(_, true) = state.alert { return }
             state.showAlert(.notification(note, replying: false), seconds: 6)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak state] in
-            guard let state, settings.appNotifications, state.notifications.access == .needsFullDiskAccess,
-                  !UserDefaults.standard.bool(forKey: "askedFullDiskAccess") else { return }
-            UserDefaults.standard.set(true, forKey: "askedFullDiskAccess")
-            state.showAlert(.info(symbol: "bell.badge.fill", title: "อยากให้แจ้งเตือนขึ้นที่รอยบาก?",
-                                  subtitle: "ให้สิทธิ์ Full Disk Access ได้ที่ ⚙️ ในรอยบาก"), seconds: 7)
-        }
 
         // The live waveform listens only while music is playing and the option is on.
         waveformObserver = state.music.$isPlaying.combineLatest(settings.$liveWaveform)
@@ -113,6 +107,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             state.showAlert(.bluetooth(name: name, kind: kind, connected: connected, battery: batteryText), seconds: 3.5)
         }
         bluetooth.start()
+
+        let permissionsModel = PermissionsModel(state: state) { [weak self] in self?.bluetooth.start() }
+        permissions = PermissionsWindowController(model: permissionsModel)
+        state.showPermissions = { [weak self] in
+            self?.controller.close()
+            self?.permissions.show()
+        }
+        // Missing something important (usually Full Disk Access after an update): walk the user through it.
+        if settings.showPermissionsAtLaunch && permissionsModel.missingEssentials {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in self?.permissions.show() }
+        }
 
         // ⌃⌥I toggles the notch, ⌃⌥T jumps to the timer.
         HotKeys.register(keyCode: kVK_ANSI_I, modifiers: controlKey | optionKey) { [weak controller] in
@@ -154,6 +159,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         menu.addItem(withTitle: "Open Notch  ⌃⌥I", action: #selector(openNotch), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Play Feature Demo", action: #selector(playDemo), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Permissions…", action: #selector(showPermissions), keyEquivalent: "").target = self
         menu.addItem(.separator())
         launchItem = menu.addItem(withTitle: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         launchItem.target = self
@@ -168,6 +174,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openNotch() {
         controller.open(sticky: 2)
+    }
+
+    @objc private func showPermissions() {
+        permissions.show()
     }
 
     @objc private func playDemo() {
