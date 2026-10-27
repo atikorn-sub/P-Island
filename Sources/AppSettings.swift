@@ -33,6 +33,14 @@ final class AppSettings: ObservableObject {
     @Published var liveWaveform: Bool {
         didSet { defaults.set(liveWaveform, forKey: "liveWaveform") }
     }
+    /// "black" or "glass": how the open panel and drop-down cards look. The closed notch is always black.
+    @Published var notchStyle: String {
+        didSet { defaults.set(notchStyle, forKey: "notchStyle") }
+    }
+    /// Darkness of the glass, 0 … 0.7.
+    @Published var glassTint: Double {
+        didSet { defaults.set(glassTint, forKey: "glassTint") }
+    }
     /// Album art flips over when the song changes (read by ArtworkView straight from UserDefaults).
     @Published var artworkFlip: Bool {
         didSet { defaults.set(artworkFlip, forKey: "artworkFlip") }
@@ -64,8 +72,10 @@ final class AppSettings: ObservableObject {
             "haptics": true, "batteryAlerts": true, "sizeScale": 1.0, "songPeek": true, "volumeHUD": true,
             "bluetoothAlerts": true, "meetingAlerts": true, "clipboardHistory": true,
             "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true, "respectFocus": true,
-            "artworkFlip": true,
+            "artworkFlip": true, "notchStyle": "black", "glassTint": 0.25,
         ])
+        notchStyle = defaults.string(forKey: "notchStyle") ?? "black"
+        glassTint = defaults.double(forKey: "glassTint")
         artworkFlip = defaults.bool(forKey: "artworkFlip")
         respectFocus = defaults.bool(forKey: "respectFocus")
         showPermissionsAtLaunch = defaults.bool(forKey: "showPermissionsAtLaunch")

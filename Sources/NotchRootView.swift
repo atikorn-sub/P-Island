@@ -38,7 +38,10 @@ struct NotchRootView: View {
             }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
-        .background(shape.fill(Color.black))
+        .background(NotchBackground(shape: shape,
+                                    glass: settings.notchStyle == "glass" && (open || alerting),
+                                    notchSize: state.notchSize, hasNotch: state.hasNotch,
+                                    tint: settings.glassTint))
         .clipShape(shape)
         .shadow(color: .black.opacity(open || alerting ? 0.5 : 0), radius: 16, y: 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

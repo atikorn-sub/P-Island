@@ -166,6 +166,26 @@ private struct GeneralPane: View {
 
     var body: some View {
         Form {
+            Section {
+                Picker("รูปแบบ", selection: $settings.notchStyle) {
+                    Text("ดำ").tag("black")
+                    Text("กระจก").tag("glass")
+                }
+                .pickerStyle(.segmented)
+                if settings.notchStyle == "glass" {
+                    LabeledContent("ความเข้มของกระจก") {
+                        HStack {
+                            Text("ใส").font(.caption).foregroundStyle(.secondary)
+                            Slider(value: $settings.glassTint, in: 0...0.7)
+                            Text("เข้ม").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                Text("หน้าตารอยบาก")
+            } footer: {
+                Text(glassNote).font(.caption).foregroundStyle(.secondary)
+            }
             Section("ขนาดรอยบากตอนกางออก") {
                 Picker("ขนาด", selection: $settings.sizeScale) {
                     ForEach(AppSettings.sizeOptions, id: \.scale) { Text($0.name).tag($0.scale) }
@@ -187,6 +207,16 @@ private struct GeneralPane: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private var glassNote: String {
+        let kind: String
+        if #available(macOS 26.0, *) {
+            kind = "ใช้ Liquid Glass ของ macOS"
+        } else {
+            kind = "เป็นกระจกฝ้าแบบเลียนแบบ (Liquid Glass ของจริงจะเปิดใช้เองเมื่ออัปเดตเป็น macOS 26)"
+        }
+        return "กระจกแสดงตอนกางรอยบากและตอนการ์ดยืดลงมา \(kind) ตอนหดจะเป็นสีดำเสมอเพื่อกลืนกับรอยบากจริง"
     }
 }
 
