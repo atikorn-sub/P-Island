@@ -16,7 +16,17 @@ swiftc -O -swift-version 5 \
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 if [ -f Resources/AppIcon.icns ]; then cp Resources/AppIcon.icns "$APP/Contents/Resources/"; fi
 
-codesign --force --sign - "$APP"
+# Sign with the self-made "P Island Developer" certificate when it exists. A stable signature lets
+# macOS remember granted permissions across rebuilds; an ad-hoc one (-) looks like a new app each time.
+IDENTITY="P Island Developer"
+# By hash, and only among code-signing identities, so an e-mail certificate of the same name can't be picked.
+SIGN_HASH=$(security find-identity -p codesigning 2>/dev/null | awk -v n="\"$IDENTITY\"" 'index($0, n) {print $2; exit}')
+if [ -n "$SIGN_HASH" ]; then
+  codesign --force --sign "$SIGN_HASH" "$APP"
+else
+  echo "note: no \"$IDENTITY\" certificate, signing ad-hoc (permissions reset on every build)"
+  codesign --force --sign - "$APP"
+fi
 echo "Built $APP"
 
 # ./build.sh --install  → replace "/Applications/P Island.app" and relaunch it.
