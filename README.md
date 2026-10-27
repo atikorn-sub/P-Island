@@ -14,7 +14,7 @@ Music, notifications, files, calendar and more — right where the notch is.
 
 **English** · [ภาษาไทย](README.th.md)
 
-[**⬇︎ Download the latest version**](../../releases/latest)
+[**⬇︎ Download P Island 1.3**](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.3.zip)
 
 </div>
 
@@ -50,8 +50,8 @@ Screenshots: put PNGs in docs/screenshots/ and uncomment this block.
 
 **You need:** macOS 14 Sonoma or later, on any Mac (Apple silicon or Intel). A notch is nice but not required.
 
-1. **Download** `P-Island-x.y.zip` (or `.dmg`) from the [latest release](../../releases/latest).
-2. **Double-click the `.zip`** to unzip it, then **drag P Island into Applications**. (With the `.dmg`: open it and drag P Island onto the Applications shortcut.)
+1. **Download** [`P-Island-1.3.zip`](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.3.zip).
+2. **Double-click the `.zip`** to unzip it, then **drag P Island into Applications**.
 3. **Open P Island** from Applications or Launchpad.
 4. macOS says it can't verify the developer, because P Island isn't sold through Apple. To allow it once:
    - **macOS 15 Sequoia and later:** open **System Settings › Privacy & Security**, scroll down to *"P Island" was blocked…* and click **Open Anyway**, then **Open**.
@@ -85,7 +85,7 @@ The status of each one updates live in **Settings › Permissions**. Turn on **L
 
 Apple Music and Spotify work straight away. For YouTube Music in Chrome, add the small companion extension:
 
-1. Download `P-Island-YouTube-Music-Extension.zip` from the [latest release](../../releases/latest) and unzip it.
+1. Download [`P-Island-YouTube-Music-Extension.zip`](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-YouTube-Music-Extension.zip) and unzip it.
 2. In Chrome, go to `chrome://extensions` and switch on **Developer mode** (top right).
 3. Click **Load unpacked** and choose the unzipped folder.
 4. Reload your YouTube Music tab.

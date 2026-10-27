@@ -14,7 +14,7 @@
 
 [English](README.md) · **ภาษาไทย**
 
-[**⬇︎ ดาวน์โหลดเวอร์ชันล่าสุด**](../../releases/latest)
+[**⬇︎ ดาวน์โหลด P Island 1.3**](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.3.zip)
 
 </div>
 
@@ -50,8 +50,8 @@
 
 **ต้องมี:** macOS 14 Sonoma ขึ้นไป ใช้ได้กับ Mac ทุกรุ่น (ชิป Apple หรือ Intel) มีรอยบากจะสวยที่สุด แต่ไม่มีก็ใช้ได้
 
-1. **ดาวน์โหลด** ไฟล์ `P-Island-x.y.zip` (หรือ `.dmg`) จาก[เวอร์ชันล่าสุด](../../releases/latest)
-2. **ดับเบิลคลิกไฟล์ `.zip`** เพื่อแตกไฟล์ แล้ว**ลาก P Island ไปไว้ใน Applications** (ถ้าใช้ `.dmg` ให้เปิดไฟล์แล้วลาก P Island ไปวางบนทางลัด Applications)
+1. **ดาวน์โหลด** ไฟล์ [`P-Island-1.3.zip`](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.3.zip)
+2. **ดับเบิลคลิกไฟล์ `.zip`** เพื่อแตกไฟล์ แล้ว**ลาก P Island ไปไว้ใน Applications**
 3. **เปิด P Island** จาก Applications หรือ Launchpad
 4. macOS จะแจ้งว่าตรวจสอบผู้พัฒนาไม่ได้ เพราะ P Island ไม่ได้ขายผ่าน Apple วิธีอนุญาต (ทำแค่ครั้งแรกครั้งเดียว)
    - **macOS 15 Sequoia ขึ้นไป:** เปิด **System Settings › Privacy & Security** เลื่อนลงไปที่ *"P Island" was blocked…* กด **Open Anyway** แล้วกด **Open**
@@ -85,7 +85,7 @@
 
 Apple Music กับ Spotify ใช้ได้ทันที ถ้าฟัง YouTube Music ใน Chrome ให้ติดตั้งส่วนขยายเล็ก ๆ เพิ่ม
 
-1. ดาวน์โหลด `P-Island-YouTube-Music-Extension.zip` จาก[เวอร์ชันล่าสุด](../../releases/latest) แล้วแตกไฟล์
+1. ดาวน์โหลด [`P-Island-YouTube-Music-Extension.zip`](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-YouTube-Music-Extension.zip) แล้วแตกไฟล์
 2. ใน Chrome ไปที่ `chrome://extensions` แล้วเปิด **Developer mode** (มุมขวาบน)
 3. กด **Load unpacked** แล้วเลือกโฟลเดอร์ที่แตกไฟล์ไว้
 4. รีเฟรชแท็บ YouTube Music หนึ่งครั้ง
