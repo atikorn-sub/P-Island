@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds "build/P Island.app" with the Command Line Tools (no Xcode project needed).
+# Builds "build.noindex/P Island.app" with the Command Line Tools (no Xcode project needed).
 #
 #   ./build.sh              build for this Mac (Apple silicon)
 #   ./build.sh --install    build, replace "/Applications/P Island.app" and relaunch it
@@ -9,11 +9,14 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 MODE="${1:-}"
-APP="build/P Island.app"
+BUILD=build.noindex
+APP="$BUILD/P Island.app"
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+# The build copy is not the app to launch; keep it out of Launch Services (Launchpad, "Open With").
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
 ARCHS="arm64"
 if [ "$MODE" = "--release" ]; then ARCHS="arm64 x86_64"; fi
@@ -24,9 +27,9 @@ for ARCH in $ARCHS; do
   echo "Compiling for $ARCH…"
   swiftc -O -swift-version 5 \
     -target "$ARCH-apple-macos14.0" -sdk "$SDK" \
-    -o "build/PIsland-$ARCH" \
+    -o "$BUILD/PIsland-$ARCH" \
     Sources/*.swift
-  SLICES+=("build/PIsland-$ARCH")
+  SLICES+=("$BUILD/PIsland-$ARCH")
 done
 lipo -create "${SLICES[@]}" -output "$APP/Contents/MacOS/PIsland"
 
@@ -46,6 +49,7 @@ else
   codesign --force --sign - "$APP"
 fi
 echo "Built $APP ($(lipo -archs "$APP/Contents/MacOS/PIsland"))"
+"$LSREGISTER" -u "$APP" 2>/dev/null || true
 
 if [ "$MODE" = "--install" ]; then
   pkill -x PIsland || true
@@ -58,7 +62,7 @@ fi
 
 if [ "$MODE" = "--release" ]; then
   DIST=dist
-  STAGE=build/dmg
+  STAGE=$BUILD/dmg
   rm -rf "$STAGE" "$DIST"
   mkdir -p "$STAGE" "$DIST"
 
@@ -68,6 +72,7 @@ if [ "$MODE" = "--release" ]; then
   cp Resources/dmg/*.txt "$STAGE/"
   hdiutil create -volname "P Island $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov \
     "$DIST/P-Island-$VERSION.dmg" >/dev/null
+  rm -rf "$STAGE"
 
   # The Chrome extension for YouTube Music, ready for "Load unpacked" after unzipping.
   (cd ChromeExtension && zip -qr "../$DIST/P-Island-YouTube-Music-Extension.zip" . -x ".*")

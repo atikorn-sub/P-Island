@@ -12,7 +12,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private var launchItem: NSMenuItem!
 
+    /// Another copy (e.g. a second P Island.app elsewhere on disk) asks the running one to come forward.
+    private static let showSettingsNotification = Notification.Name("com.atikorn.islet.showSettings")
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Only one P Island at a time: two would stack two notches on top of each other.
+        let others = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
+            .filter { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
+        if !others.isEmpty {
+            NSLog("%@", "Islet: already running (pid \(others[0].processIdentifier)), handing over and quitting")
+            DistributedNotificationCenter.default().postNotificationName(Self.showSettingsNotification, object: nil,
+                                                                         userInfo: nil, deliverImmediately: true)
+            NSApp.terminate(nil)
+            return
+        }
+        DistributedNotificationCenter.default().addObserver(forName: Self.showSettingsNotification, object: nil,
+                                                            queue: .main) { [weak self] _ in
+            self?.settingsWindow?.show()
+        }
+
         let settings = AppSettings()
         NSLog("%@", "Islet language: setting=\(Lang.setting.rawValue) thai=\(Lang.isThai) sample=\(tr("การตั้งค่า", "Settings"))")
         let state = NotchState(
@@ -193,6 +211,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(withTitle: tr("ออกจาก P Island", "Quit P Island"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = menu
+    }
+
+    /// Opening P Island again (Launchpad, Finder, Spotlight) while it runs shows Settings, so it isn't a dead click.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        settingsWindow?.show()
+        return false
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
