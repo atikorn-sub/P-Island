@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>th</string>
+	<string>en</string>
 	<key>CFBundleDisplayName</key>
 	<string>P Island</string>
 	<key>CFBundleExecutable</key>
@@ -12,6 +12,11 @@
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.atikorn.islet</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>th</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>P Island</string>
 	<key>CFBundlePackageType</key>
@@ -25,16 +30,16 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>P Island ใช้อ่านเพลงที่กำลังเล่นใน Music และ Spotify ควบคุมการเล่นเพลงจากรอยบาก และส่งข้อความตอบกลับที่คุณพิมพ์ผ่าน Messages</string>
+	<string>P Island reads what is playing in Music and Spotify, controls playback from the notch, and sends the iMessage replies you type.</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>P Island ฟังเสียงที่เครื่องกำลังเล่น เพื่อให้คลื่นเสียงที่รอยบากขยับตามเพลง ไม่มีการอัดหรือบันทึกเสียงใด ๆ</string>
+	<string>P Island listens to what your Mac is playing so the notch waveform moves with the music. Nothing is recorded or saved.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>P Island ใช้แจ้งเตือนเมื่อ AirPods และอุปกรณ์บลูทูธเชื่อมต่อ พร้อมบอก % แบตเตอรี่</string>
+	<string>P Island shows when AirPods and other Bluetooth devices connect, with their battery levels.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>P Island ใช้แสดงนัดหมายของคุณที่รอยบาก และเตือนก่อนเริ่มประชุม</string>
+	<string>P Island shows your events in the notch and reminds you before meetings.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>P Island ใช้ถอดเสียงจากไฟล์เสียงหรือวิดีโอเป็นข้อความ เมื่อคุณสั่งเท่านั้น</string>
+	<string>P Island turns speech in your audio and video files into text, only when you ask.</string>
 </dict>
 </plist>

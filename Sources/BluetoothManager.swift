@@ -87,9 +87,9 @@ final class BluetoothManager: NSObject {
         let parts = [
             percent("batteryPercentLeft").map { "L \($0)%" },
             percent("batteryPercentRight").map { "R \($0)%" },
-            percent("batteryPercentCase").map { "เคส \($0)%" },
+            percent("batteryPercentCase").map { tr("เคส \($0)%", "Case \($0)%") },
         ].compactMap { $0 }
         if !parts.isEmpty { return parts.joined(separator: " · ") }
-        return percent("batteryPercentSingle").map { "แบต \($0)%" }
+        return percent("batteryPercentSingle").map { tr("แบต \($0)%", "Battery \($0)%") }
     }
 }

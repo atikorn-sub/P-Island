@@ -17,11 +17,11 @@ enum NotchTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: return "หน้าหลัก"
-        case .calendar: return "ปฏิทินและสภาพอากาศ"
-        case .shelf: return "ชั้นวางไฟล์"
-        case .clipboard: return "คลิปบอร์ด"
-        case .timer: return "ตัวจับเวลา"
+        case .home: return tr("หน้าหลัก", "Home")
+        case .calendar: return tr("ปฏิทินและสภาพอากาศ", "Calendar & Weather")
+        case .shelf: return tr("ชั้นวางไฟล์", "Shelf")
+        case .clipboard: return tr("คลิปบอร์ด", "Clipboard")
+        case .timer: return tr("ตัวจับเวลา", "Timer")
         }
     }
 }

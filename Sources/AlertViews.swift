@@ -97,14 +97,14 @@ struct AlertNotchView: View {
     @ViewBuilder private var content: some View {
         switch alert {
         case .lowBattery(let level, let minutes):
-            message(level <= 10 ? "แบตเตอรี่ใกล้หมด" : "แบตเตอรี่เหลือน้อย",
-                    minutes.map { "ใช้งานได้อีกประมาณ \(BatteryManager.formatMinutes($0)) · เสียบสายชาร์จ" }
-                        ?? "เสียบสายชาร์จเพื่อใช้งานต่อ",
+            message(level <= 10 ? tr("แบตเตอรี่ใกล้หมด", "Battery almost empty") : tr("แบตเตอรี่เหลือน้อย", "Low battery"),
+                    minutes.map { tr("ใช้งานได้อีกประมาณ \(BatteryManager.formatMinutes($0)) · เสียบสายชาร์จ", "About \(BatteryManager.formatMinutes($0)) left · plug in") }
+                        ?? tr("เสียบสายชาร์จเพื่อใช้งานต่อ", "Plug in to keep going"),
                     color: BatteryManager.color(for: level))
         case .fullyCharged:
-            message("ชาร์จเต็มแล้ว", "ถอดสายชาร์จได้เลย", color: .green)
+            message(tr("ชาร์จเต็มแล้ว", "Fully charged"), tr("ถอดสายชาร์จได้เลย", "You can unplug now"), color: .green)
         case .batteryEstimate(let level, let minutes):
-            message("ใช้แบตเตอรี่", "ใช้งานได้อีกประมาณ \(BatteryManager.formatMinutes(minutes))",
+            message(tr("ใช้แบตเตอรี่", "On battery"), tr("ใช้งานได้อีกประมาณ \(BatteryManager.formatMinutes(minutes))", "About \(BatteryManager.formatMinutes(minutes)) left"),
                     color: BatteryManager.color(for: level))
         case .nowPlaying(let title, let artist):
             message(title, artist, color: .white)
@@ -117,7 +117,7 @@ struct AlertNotchView: View {
         case .meeting(let title, let url, _):
             HStack(spacing: 10 * s) {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("การประชุมกำลังจะเริ่ม")
+                    Text(tr("การประชุมกำลังจะเริ่ม", "Meeting starting"))
                         .font(.system(size: 11 * s))
                         .foregroundStyle(.white.opacity(0.6))
                     Text(title)
@@ -129,7 +129,7 @@ struct AlertNotchView: View {
                     NSWorkspace.shared.open(url)
                     state.dismissAlert()
                 } label: {
-                    Text("เข้าร่วม")
+                    Text(tr("เข้าร่วม", "Join"))
                         .font(.system(size: 12 * s, weight: .semibold))
                         .padding(.horizontal, 14 * s)
                         .padding(.vertical, 6 * s)
@@ -139,7 +139,7 @@ struct AlertNotchView: View {
             }
             .padding(.horizontal, 22 * s)
         case .bluetooth(let name, _, let connected, let battery):
-            message(name, connected ? (battery.map { "เชื่อมต่อแล้ว · \($0)" } ?? "เชื่อมต่อแล้ว") : "ตัดการเชื่อมต่อแล้ว",
+            message(name, connected ? (battery.map { tr("เชื่อมต่อแล้ว · \($0)", "Connected · \($0)") } ?? tr("เชื่อมต่อแล้ว", "Connected")) : tr("ตัดการเชื่อมต่อแล้ว", "Disconnected"),
                     color: .white)
         case .info(_, let title, let subtitle):
             message(title, subtitle, color: .white)

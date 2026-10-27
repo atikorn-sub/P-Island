@@ -63,11 +63,23 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(sizeScale, forKey: "sizeScale") }
     }
 
-    static let sizeOptions: [(name: String, scale: Double)] = [
-        ("เล็ก", 0.85), ("ปกติ", 1.0), ("ใหญ่", 1.15), ("ใหญ่มาก", 1.3),
-    ]
+    static var sizeOptions: [(name: String, scale: Double)] { [
+        (tr("เล็ก", "Small"), 0.85), (tr("ปกติ", "Default"), 1.0), (tr("ใหญ่", "Large"), 1.15), (tr("ใหญ่มาก", "Extra Large"), 1.3),
+    ] }
+
+    /// The app's language; also mirrored into `Lang.setting`, which `tr()` reads.
+    @Published var language: AppLanguage {
+        didSet {
+            defaults.set(language.rawValue, forKey: "language")
+            Lang.setting = language
+        }
+    }
 
     init() {
+        // First, so every tr() from here on speaks the right language.
+        let savedLanguage = AppLanguage(rawValue: UserDefaults.standard.string(forKey: "language") ?? "") ?? .system
+        Lang.setting = savedLanguage
+        language = savedLanguage
         defaults.register(defaults: [
             "haptics": true, "batteryAlerts": true, "sizeScale": 1.0, "songPeek": true, "volumeHUD": true,
             "bluetoothAlerts": true, "meetingAlerts": true, "clipboardHistory": true,

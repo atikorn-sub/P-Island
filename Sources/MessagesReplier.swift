@@ -18,7 +18,7 @@ enum MessagesReplier {
             if let guid = latestIncomingChatGUID() {
                 error = send(text, toChat: guid)
             } else {
-                error = "หาแชตล่าสุดไม่เจอ (ต้องให้สิทธิ์ Full Disk Access)"
+                error = tr("หาแชตล่าสุดไม่เจอ (ต้องให้สิทธิ์ Full Disk Access)", "Couldn't find the latest chat (needs Full Disk Access)")
             }
             DispatchQueue.main.async { completion(error) }
         }
@@ -53,8 +53,8 @@ enum MessagesReplier {
         NSAppleScript(source: source)?.executeAndReturnError(&error)
         guard let error else { return nil }
         if error[NSAppleScript.errorNumber] as? Int == -1743 {
-            return "ต้องอนุญาตให้ P Island ควบคุม Messages ก่อน"
+            return tr("ต้องอนุญาตให้ P Island ควบคุม Messages ก่อน", "Allow P Island to control Messages first")
         }
-        return error[NSAppleScript.errorMessage] as? String ?? "ส่งไม่สำเร็จ"
+        return error[NSAppleScript.errorMessage] as? String ?? tr("ส่งไม่สำเร็จ", "Couldn't send")
     }
 }

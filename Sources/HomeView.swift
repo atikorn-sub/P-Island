@@ -39,7 +39,7 @@ struct NowPlayingCard: View {
                     }
                     .contentShape(Rectangle())
                     .onTapGesture { music.openPlayer() }
-                    .help("เปิดใน \(music.player?.rawValue ?? "แอปเพลง")")
+                    .help(tr("เปิดใน \(music.player?.rawValue ?? "แอปเพลง")", "Open in \(music.player?.rawValue ?? "the player")"))
                     Spacer(minLength: 6)
                     ProgressRow(music: music)
                     controls.padding(.top, 4)
@@ -75,18 +75,18 @@ struct NowPlayingCard: View {
                 .font(.system(size: 28))
                 .foregroundStyle(.white.opacity(0.3))
             if let p = music.needsPermission {
-                Text("อนุญาตให้ P Island ควบคุม \(p.rawValue)")
+                Text(tr("อนุญาตให้ P Island ควบคุม \(p.rawValue)", "Allow P Island to control \(p.rawValue)"))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.white.opacity(0.7))
-                Button("เปิดการตั้งค่า Automation") { music.openAutomationSettings() }
+                Button(tr("เปิดการตั้งค่า Automation", "Open Automation Settings")) { music.openAutomationSettings() }
                     .buttonStyle(PillButtonStyle())
             } else {
-                Text("ไม่มีเพลงที่กำลังเล่น")
+                Text(tr("ไม่มีเพลงที่กำลังเล่น", "Nothing playing"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.5))
                 HStack(spacing: 8) {
                     ForEach(music.installedPlayers) { p in
-                        Button("เปิด \(p.rawValue)") { music.openPlayer(p) }
+                        Button(tr("เปิด \(p.rawValue)", "Open \(p.rawValue)")) { music.openPlayer(p) }
                             .buttonStyle(PillButtonStyle())
                     }
                 }
@@ -268,20 +268,20 @@ struct CalendarCard: View {
             }
             switch calendar.status {
             case .notDetermined:
-                message("ดูนัดหมายวันนี้ที่นี่")
-                Button("อนุญาตปฏิทิน") { calendar.requestAccess() }.buttonStyle(PillButtonStyle())
+                message(tr("ดูนัดหมายวันนี้ที่นี่", "See today's events here"))
+                Button(tr("อนุญาตปฏิทิน", "Allow Calendar")) { calendar.requestAccess() }.buttonStyle(PillButtonStyle())
             case .denied:
-                message("ยังไม่ได้อนุญาตปฏิทิน")
-                Button("เปิดการตั้งค่า") { calendar.openPrivacySettings() }.buttonStyle(PillButtonStyle())
+                message(tr("ยังไม่ได้อนุญาตปฏิทิน", "No calendar access"))
+                Button(tr("เปิดการตั้งค่า", "Open Settings")) { calendar.openPrivacySettings() }.buttonStyle(PillButtonStyle())
             case .authorized:
                 if calendar.events.isEmpty {
-                    message("วันนี้ไม่มีนัดแล้ว")
+                    message(tr("วันนี้ไม่มีนัดแล้ว", "No more events today"))
                 } else {
                     ForEach(calendar.events.prefix(3)) { event in
                         EventRow(event: event)
                     }
                     if calendar.events.count > 3 {
-                        message("และอีก \(calendar.events.count - 3) นัด")
+                        message(tr("และอีก \(calendar.events.count - 3) นัด", "+\(calendar.events.count - 3) more"))
                     }
                 }
             }
@@ -309,7 +309,7 @@ struct EventRow: View {
                     .lineLimit(1)
                 Group {
                     if event.isAllDay {
-                        Text("ทั้งวัน")
+                        Text(tr("ทั้งวัน", "All day"))
                     } else {
                         Text(event.start, format: .dateTime.hour().minute()) + Text(" – ") + Text(event.end, format: .dateTime.hour().minute())
                     }
@@ -326,7 +326,7 @@ struct EventRow: View {
                         .background(Circle().fill(Color.green.opacity(0.8)))
                 }
                 .buttonStyle(.plain)
-                .help("เข้าร่วมประชุม")
+                .help(tr("เข้าร่วมประชุม", "Join meeting"))
             }
         }
     }

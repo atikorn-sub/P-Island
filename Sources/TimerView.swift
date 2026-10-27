@@ -17,7 +17,7 @@ struct TimerView: View {
                     Text(TimerManager.format(timer.remaining))
                         .font(.system(size: 26, weight: .semibold, design: .rounded).monospacedDigit())
                     if timer.phase == .finished {
-                        Text("ครบเวลา").font(.system(size: 11, weight: .medium)).foregroundStyle(.orange)
+                        Text(tr("ครบเวลา", "Done")).font(.system(size: 11, weight: .medium)).foregroundStyle(.orange)
                     }
                 }
             }
@@ -26,7 +26,7 @@ struct TimerView: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 6) {
                     ForEach(presets, id: \.self) { m in
-                        Button("\(m) น.") { timer.setMinutes(m) }
+                        Button(tr("\(m) น.", "\(m)m")) { timer.setMinutes(m) }
                             .buttonStyle(PillButtonStyle())
                     }
                 }

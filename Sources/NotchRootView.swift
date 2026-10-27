@@ -49,7 +49,8 @@ struct NotchRootView: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.82), value: state.closedActivity)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: settings.sizeScale)
         .environment(\.colorScheme, .dark)
-        .environment(\.locale, .thai)
+        .environment(\.locale, Lang.locale)
+        .id(settings.language) // rebuild every label when the language changes
         .ignoresSafeArea()
     }
 }
@@ -123,7 +124,7 @@ private extension TransientActivity {
         switch self {
         case .charging(let l), .unplugged(let l): return "\(l)%"
         case .shelfAdded(let n): return "+\(n)"
-        case .focus(let on): return on ? "เปิด" : "ปิด"
+        case .focus(let on): return on ? tr("เปิด", "On") : tr("ปิด", "Off")
         }
     }
 
@@ -191,7 +192,8 @@ struct FocusBadge: View {
             Image(systemName: "moon.fill")
                 .font(.system(size: 12))
                 .foregroundStyle(.indigo)
-                .help("เปิดโหมด \(focus.modeName ?? "Focus") อยู่ — แจ้งเตือนที่ไม่สำคัญจะเงียบ")
+                .help(tr("เปิดโหมด \(focus.modeName ?? "Focus") อยู่ — แจ้งเตือนที่ไม่สำคัญจะเงียบ",
+                          "\(focus.modeName ?? "Focus") is on — non-essential alerts stay quiet"))
         }
     }
 }
@@ -271,15 +273,15 @@ struct NotchHeader: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("การตั้งค่า")
+                .help(tr("การตั้งค่า", "Settings"))
             }
         }
     }
 
     private var batteryHelp: String {
         if battery.isPluggedIn {
-            return battery.minutesToFull.map { "ชาร์จเต็มในอีก \(BatteryManager.formatMinutes($0))" } ?? "กำลังชาร์จ"
+            return battery.minutesToFull.map { tr("ชาร์จเต็มในอีก \(BatteryManager.formatMinutes($0))", "Full in \(BatteryManager.formatMinutes($0))") } ?? tr("กำลังชาร์จ", "Charging")
         }
-        return battery.minutesToEmpty.map { "ใช้งานได้อีกประมาณ \(BatteryManager.formatMinutes($0))" } ?? "ใช้แบตเตอรี่"
+        return battery.minutesToEmpty.map { tr("ใช้งานได้อีกประมาณ \(BatteryManager.formatMinutes($0))", "About \(BatteryManager.formatMinutes($0)) left") } ?? tr("ใช้แบตเตอรี่", "On battery")
     }
 }

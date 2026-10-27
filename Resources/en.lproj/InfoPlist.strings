@@ -1,0 +1,6 @@
+/* Shown by macOS when P Island asks for a permission. */
+"NSAppleEventsUsageDescription" = "P Island reads what's playing in Music and Spotify, controls playback from the notch, and sends the iMessage replies you type.";
+"NSCalendarsFullAccessUsageDescription" = "P Island shows your events in the notch and reminds you before meetings.";
+"NSBluetoothAlwaysUsageDescription" = "P Island shows when AirPods and other Bluetooth devices connect, with their battery levels.";
+"NSSpeechRecognitionUsageDescription" = "P Island turns speech in your audio and video files into text, only when you ask.";
+"NSAudioCaptureUsageDescription" = "P Island listens to what your Mac is playing so the notch waveform moves with the music. Nothing is recorded or saved.";

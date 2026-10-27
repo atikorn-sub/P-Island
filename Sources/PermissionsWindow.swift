@@ -172,29 +172,29 @@ struct PermissionsList: View {
     var body: some View {
         VStack(spacing: 0) {
             PermissionRow(symbol: "bell.badge.fill", color: .red, title: "Full Disk Access",
-                          reason: "แสดงแจ้งเตือนจากแอปอื่น ตอบ iMessage จากรอยบาก และรู้ว่าเปิดโหมด Focus อยู่",
+                          reason: tr("แสดงแจ้งเตือนจากแอปอื่น ตอบ iMessage จากรอยบาก และรู้ว่าเปิดโหมด Focus อยู่", "Show other apps' notifications, reply to iMessage from the notch, and know when a Focus is on"),
                           hint: model.fullDisk == .granted ? nil
-                              : "ลาก P Island จาก Finder ลงในรายการ แล้วเปิดสวิตช์ (ถ้ามีชื่อเดิมอยู่ ให้ลบออกก่อน)",
+                              : tr("ลาก P Island จาก Finder ลงในรายการ แล้วเปิดสวิตช์ (ถ้ามีชื่อเดิมอยู่ ให้ลบออกก่อน)", "Drag P Island from Finder into the list and turn it on (remove any old entry first)"),
                           state: model.fullDisk, action: model.fixFullDisk)
             Divider()
             PermissionRow(symbol: "calendar", color: .orange, title: "Calendar",
-                          reason: "นัดหมายวันนี้ ปฏิทินรายเดือน และปุ่มเข้าประชุม",
+                          reason: tr("นัดหมายวันนี้ ปฏิทินรายเดือน และปุ่มเข้าประชุม", "Today's events, the month calendar and meeting join buttons"),
                           state: model.calendar, action: model.fixCalendar)
             Divider()
             PermissionRow(symbol: "airpodspro", color: .blue, title: "Bluetooth",
-                          reason: "แจ้งตอน AirPods และอุปกรณ์บลูทูธเชื่อมต่อ พร้อม % แบต",
+                          reason: tr("แจ้งตอน AirPods และอุปกรณ์บลูทูธเชื่อมต่อ พร้อม % แบต", "Alerts when AirPods and Bluetooth devices connect, with battery %"),
                           state: model.bluetooth, action: model.fixBluetooth)
             Divider()
             PermissionRow(symbol: "waveform", color: .purple, title: "Speech Recognition",
-                          reason: "ถอดเสียงจากไฟล์เสียงหรือวิดีโอบนชั้นวางเป็นข้อความ",
+                          reason: tr("ถอดเสียงจากไฟล์เสียงหรือวิดีโอบนชั้นวางเป็นข้อความ", "Turn speech in audio or video files on the shelf into text"),
                           state: model.speech, action: model.fixSpeech)
             ForEach(PermissionsModel.automationTargets, id: \.id) { target in
                 if NSWorkspace.shared.urlForApplication(withBundleIdentifier: target.id) != nil {
                     Divider()
-                    PermissionRow(symbol: "applescript.fill", color: .gray, title: "ควบคุม \(target.name)",
+                    PermissionRow(symbol: "applescript.fill", color: .gray, title: tr("ควบคุม \(target.name)", "Control \(target.name)"),
                                   reason: target.id == "com.apple.MobileSMS"
-                                      ? "ส่งข้อความตอบกลับ iMessage ที่คุณพิมพ์จากรอยบาก"
-                                      : "อ่านเพลงที่กำลังเล่นและกดเล่น/หยุด/ข้ามเพลง",
+                                      ? tr("ส่งข้อความตอบกลับ iMessage ที่คุณพิมพ์จากรอยบาก", "Send the iMessage replies you type in the notch")
+                                      : tr("อ่านเพลงที่กำลังเล่นและกดเล่น/หยุด/ข้ามเพลง", "Read what's playing and play, pause or skip"),
                                   state: model.automation[target.id] ?? .unknown) {
                         model.fixAutomation(target.id)
                     }
@@ -205,12 +205,12 @@ struct PermissionsList: View {
                 RowIcon(symbol: "chart.bar.fill", color: .green)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("System Audio Recording").font(.body.weight(.medium))
-                    Text("คลื่นเสียงที่ขยับตามเพลงจริง เปิดสวิตช์แล้วเล่นเพลง macOS จะถามสิทธิ์เอง")
+                    Text(tr("คลื่นเสียงที่ขยับตามเพลงจริง เปิดสวิตช์แล้วเล่นเพลง macOS จะถามสิทธิ์เอง", "Waveform that follows the real music. Turn it on and play something; macOS will ask"))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Toggle("", isOn: $settings.liveWaveform).toggleStyle(.switch).labelsHidden()
-                Button("ตั้งค่า") { model.openAudioSettings() }
+                Button(tr("ตั้งค่า", "Settings")) { model.openAudioSettings() }
             }
             .padding(.vertical, 10)
         }
@@ -253,9 +253,9 @@ struct PermissionRow: View {
 
     private var buttonTitle: String {
         switch state {
-        case .notAsked: return "อนุญาต"
-        case .appNotRunning: return "เปิดแอปแล้วอนุญาต"
-        default: return "เปิดการตั้งค่า"
+        case .notAsked: return tr("อนุญาต", "Allow")
+        case .appNotRunning: return tr("เปิดแอปแล้วอนุญาต", "Open App & Allow")
+        default: return tr("เปิดการตั้งค่า", "Open Settings")
         }
     }
 }
@@ -279,10 +279,10 @@ struct StatusBadge: View {
     var body: some View {
         let (text, color): (String, Color) = {
             switch state {
-            case .granted: return ("อนุญาตแล้ว", .green)
-            case .denied: return ("ยังไม่ได้อนุญาต", .orange)
-            case .notAsked: return ("ยังไม่ได้ขอ", .secondary)
-            case .appNotRunning: return ("แอปยังไม่เปิด", .secondary)
+            case .granted: return (tr("อนุญาตแล้ว", "Allowed"), .green)
+            case .denied: return (tr("ยังไม่ได้อนุญาต", "Not allowed"), .orange)
+            case .notAsked: return (tr("ยังไม่ได้ขอ", "Not asked"), .secondary)
+            case .appNotRunning: return (tr("แอปยังไม่เปิด", "App not open"), .secondary)
             case .unknown: return ("—", .secondary)
             }
         }()

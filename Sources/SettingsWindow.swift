@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 enum AppInfo {
@@ -14,13 +15,13 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general: return "ทั่วไป"
-        case .alerts: return "การแจ้งเตือน"
-        case .music: return "เพลง"
-        case .calendar: return "ปฏิทินและอากาศ"
-        case .clipboard: return "คลิปบอร์ด"
-        case .permissions: return "สิทธิ์การเข้าถึง"
-        case .about: return "เกี่ยวกับ"
+        case .general: return tr("ทั่วไป", "General")
+        case .alerts: return tr("การแจ้งเตือน", "Notifications")
+        case .music: return tr("เพลง", "Music")
+        case .calendar: return tr("ปฏิทินและอากาศ", "Calendar & Weather")
+        case .clipboard: return tr("คลิปบอร์ด", "Clipboard")
+        case .permissions: return tr("สิทธิ์การเข้าถึง", "Permissions")
+        case .about: return tr("เกี่ยวกับ", "About")
         }
     }
 
@@ -59,6 +60,7 @@ final class SettingsWindowController: NSObject {
     private let permissions: PermissionsModel
     private let selection = SettingsSelection()
     private var window: NSWindow?
+    private var languageObserver: AnyCancellable?
 
     init(state: NotchState, permissions: PermissionsModel) {
         self.state = state
@@ -70,7 +72,7 @@ final class SettingsWindowController: NSObject {
         if window == nil {
             let view = SettingsView(state: state, permissions: permissions, selection: selection, settings: state.settings)
             let w = NSWindow(contentViewController: NSHostingController(rootView: view))
-            w.title = "การตั้งค่า \(AppInfo.name)"
+            w.title = tr("การตั้งค่า \(AppInfo.name)", "\(AppInfo.name) Settings")
             w.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
             w.titlebarAppearsTransparent = true
             w.isReleasedWhenClosed = false
@@ -80,6 +82,9 @@ final class SettingsWindowController: NSObject {
             // Comes back at the size and place it was last left.
             w.setFrameAutosaveName("PIslandSettings")
             window = w
+            languageObserver = state.settings.$language.dropFirst().sink { [weak w] _ in
+                DispatchQueue.main.async { w?.title = tr("การตั้งค่า \(AppInfo.name)", "\(AppInfo.name) Settings") }
+            }
         }
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
@@ -99,7 +104,7 @@ struct SettingsView: View {
                     Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 44, height: 44)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(AppInfo.name).font(.headline)
-                        Text("เวอร์ชัน \(AppInfo.version)").font(.caption).foregroundStyle(.secondary)
+                        Text(tr("เวอร์ชัน \(AppInfo.version)", "Version \(AppInfo.version)")).font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
                 }
@@ -128,7 +133,8 @@ struct SettingsView: View {
                 .navigationTitle(selection.pane?.title ?? "")
         }
         .frame(minWidth: 680, maxWidth: .infinity, minHeight: 460, maxHeight: .infinity)
-        .environment(\.locale, .thai)
+        .environment(\.locale, Lang.locale)
+        .id(settings.language) // rebuild every label when the language changes
     }
 
     @ViewBuilder private var detail: some View {
@@ -167,43 +173,53 @@ private struct GeneralPane: View {
     var body: some View {
         Form {
             Section {
-                Picker("รูปแบบ", selection: $settings.notchStyle) {
-                    Text("ดำ").tag("black")
-                    Text("กระจก").tag("glass")
+                Picker(tr("ภาษา", "Language"), selection: $settings.language) {
+                    ForEach(AppLanguage.allCases) { Text($0.label).tag($0) }
+                }
+            } header: {
+                Text(tr("ภาษา", "Language"))
+            } footer: {
+                Text(tr("\"ตามเครื่อง\" ใช้ภาษาเดียวกับ macOS", "\"System\" follows the language macOS uses"))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
+                Picker(tr("รูปแบบ", "Style"), selection: $settings.notchStyle) {
+                    Text(tr("ดำ", "Black")).tag("black")
+                    Text(tr("กระจก", "Glass")).tag("glass")
                 }
                 .pickerStyle(.segmented)
                 if settings.notchStyle == "glass" {
-                    LabeledContent("ความเข้มของกระจก") {
+                    LabeledContent(tr("ความเข้มของกระจก", "Glass darkness")) {
                         HStack {
-                            Text("ใส").font(.caption).foregroundStyle(.secondary)
+                            Text(tr("ใส", "Clear")).font(.caption).foregroundStyle(.secondary)
                             Slider(value: $settings.glassTint, in: 0...0.7)
-                            Text("เข้ม").font(.caption).foregroundStyle(.secondary)
+                            Text(tr("เข้ม", "Dark")).font(.caption).foregroundStyle(.secondary)
                         }
                     }
                 }
             } header: {
-                Text("หน้าตารอยบาก")
+                Text(tr("หน้าตารอยบาก", "Notch look"))
             } footer: {
                 Text(glassNote).font(.caption).foregroundStyle(.secondary)
             }
-            Section("ขนาดรอยบากตอนกางออก") {
-                Picker("ขนาด", selection: $settings.sizeScale) {
+            Section(tr("ขนาดรอยบากตอนกางออก", "Open notch size")) {
+                Picker(tr("ขนาด", "Size"), selection: $settings.sizeScale) {
                     ForEach(AppSettings.sizeOptions, id: \.scale) { Text($0.name).tag($0.scale) }
                 }
                 .pickerStyle(.segmented)
             }
-            Section("การทำงาน") {
-                DescribedToggle(title: "เปิดตอนเข้าเครื่อง", detail: "P Island เริ่มทำงานเองทุกครั้งที่เปิดเครื่อง",
+            Section(tr("การทำงาน", "Behaviour")) {
+                DescribedToggle(title: tr("เปิดตอนเข้าเครื่อง", "Launch at Login"), detail: tr("P Island เริ่มทำงานเองทุกครั้งที่เปิดเครื่อง", "P Island starts by itself whenever you log in"),
                                 isOn: $settings.launchAtLogin)
-                DescribedToggle(title: "สั่นที่แทร็กแพด", detail: "สั่นเบา ๆ ตอนรอยบากกางออก",
+                DescribedToggle(title: tr("สั่นที่แทร็กแพด", "Trackpad haptics"), detail: tr("สั่นเบา ๆ ตอนรอยบากกางออก", "A light tap when the notch opens"),
                                 isOn: $settings.haptics)
             }
-            Section("ปุ่มลัด") {
-                LabeledContent("เปิด/ปิดรอยบาก", value: "⌃⌥I")
-                LabeledContent("ไปที่ตัวจับเวลา", value: "⌃⌥T")
+            Section(tr("ปุ่มลัด", "Shortcuts")) {
+                LabeledContent(tr("เปิด/ปิดรอยบาก", "Open/close the notch"), value: "⌃⌥I")
+                LabeledContent(tr("ไปที่ตัวจับเวลา", "Go to the timer"), value: "⌃⌥T")
             }
             Section {
-                Button("เล่นเดโมการ์ดแจ้งเตือน") { Demo.runAlerts(state: state) }
+                Button(tr("เล่นเดโมการ์ดแจ้งเตือน", "Play notch card demo")) { Demo.runAlerts(state: state) }
             }
         }
         .formStyle(.grouped)
@@ -212,11 +228,11 @@ private struct GeneralPane: View {
     private var glassNote: String {
         let kind: String
         if #available(macOS 26.0, *) {
-            kind = "ใช้ Liquid Glass ของ macOS"
+            kind = tr("ใช้ Liquid Glass ของ macOS", "uses macOS Liquid Glass")
         } else {
-            kind = "เป็นกระจกฝ้าแบบเลียนแบบ (Liquid Glass ของจริงจะเปิดใช้เองเมื่ออัปเดตเป็น macOS 26)"
+            kind = tr("เป็นกระจกฝ้าแบบเลียนแบบ (Liquid Glass ของจริงจะเปิดใช้เองเมื่ออัปเดตเป็น macOS 26)", "is a frosted-glass look-alike (real Liquid Glass turns on by itself on macOS 26)")
         }
-        return "กระจกแสดงตอนกางรอยบากและตอนการ์ดยืดลงมา \(kind) ตอนหดจะเป็นสีดำเสมอเพื่อกลืนกับรอยบากจริง"
+        return tr("กระจกแสดงตอนกางรอยบากและตอนการ์ดยืดลงมา \(kind) ตอนหดจะเป็นสีดำเสมอเพื่อกลืนกับรอยบากจริง", "Glass shows when the notch opens and when cards drop down; it \(kind). Closed, the notch stays black to blend with the real one.")
     }
 }
 
@@ -226,25 +242,27 @@ private struct AlertsPane: View {
 
     var body: some View {
         Form {
-            Section("แสดงที่รอยบาก") {
-                DescribedToggle(title: "แจ้งเตือนจากแอปอื่น", detail: "LINE, Messages, Mail และทุกแอปที่มีแจ้งเตือน",
+            Section(tr("แสดงที่รอยบาก", "Show in the notch")) {
+                DescribedToggle(title: tr("แจ้งเตือนจากแอปอื่น", "Other apps' notifications"), detail: tr("LINE, Messages, Mail และทุกแอปที่มีแจ้งเตือน", "LINE, Messages, Mail and any app that sends notifications"),
                                 isOn: $settings.appNotifications)
-                DescribedToggle(title: "ชื่อเพลงตอนเปลี่ยนเพลง", detail: "รอยบากยืดลงมาโชว์ปกและชื่อเพลงใหม่",
+                DescribedToggle(title: tr("ชื่อเพลงตอนเปลี่ยนเพลง", "Song changes"), detail: tr("รอยบากยืดลงมาโชว์ปกและชื่อเพลงใหม่", "The notch drops down with the new song's cover and title"),
                                 isOn: $settings.songPeek)
-                DescribedToggle(title: "ระดับเสียงและความสว่าง", detail: "แถบปรับที่รอยบากตอนกดปุ่มบนคีย์บอร์ด",
+                DescribedToggle(title: tr("ระดับเสียงและความสว่าง", "Volume & brightness"), detail: tr("แถบปรับที่รอยบากตอนกดปุ่มบนคีย์บอร์ด", "A slider in the notch when you press the keyboard keys"),
                                 isOn: $settings.volumeHUD)
-                DescribedToggle(title: "แจ้งเตือนแบตเตอรี่", detail: "แบตเหลือ 20%, 10%, 5% ชาร์จเต็ม และเสียบ/ถอดสาย",
+                DescribedToggle(title: tr("แจ้งเตือนแบตเตอรี่", "Battery alerts"), detail: tr("แบตเหลือ 20%, 10%, 5% ชาร์จเต็ม และเสียบ/ถอดสาย", "20%, 10%, 5% left, fully charged, and plugging in or out"),
                                 isOn: $settings.batteryAlerts)
-                DescribedToggle(title: "อุปกรณ์บลูทูธ", detail: "AirPods และอุปกรณ์อื่นเชื่อมต่อหรือตัดการเชื่อมต่อ",
+                DescribedToggle(title: tr("อุปกรณ์บลูทูธ", "Bluetooth devices"), detail: tr("AirPods และอุปกรณ์อื่นเชื่อมต่อหรือตัดการเชื่อมต่อ", "AirPods and other devices connecting or disconnecting"),
                                 isOn: $settings.bluetoothAlerts)
-                DescribedToggle(title: "การประชุม", detail: "ปุ่มเข้าร่วม Zoom, Meet, Teams ก่อนเริ่มประมาณ 1 นาที",
+                DescribedToggle(title: tr("การประชุม", "Meetings"), detail: tr("ปุ่มเข้าร่วม Zoom, Meet, Teams ก่อนเริ่มประมาณ 1 นาที", "A Join button for Zoom, Meet or Teams about a minute before"),
                                 isOn: $settings.meetingAlerts)
             }
-            Section("โหมด Focus") {
-                DescribedToggle(title: "เงียบเมื่อเปิดโหมด Focus",
-                                detail: "พักแจ้งเตือนจากแอปอื่น ชื่อเพลง และบลูทูธ แต่ยังเตือนแบตใกล้หมด ตัวจับเวลา และประชุม",
+            Section(tr("โหมด Focus", "Focus")) {
+                DescribedToggle(title: tr("เงียบเมื่อเปิดโหมด Focus", "Stay quiet during Focus"),
+                                detail: tr("พักแจ้งเตือนจากแอปอื่น ชื่อเพลง และบลูทูธ แต่ยังเตือนแบตใกล้หมด ตัวจับเวลา และประชุม", "Holds back app notifications, song changes and Bluetooth; low battery, timers and meetings still show"),
                                 isOn: $settings.respectFocus)
-                LabeledContent("ตอนนี้", value: focus.isActive ? "เปิดโหมด \(focus.modeName ?? "Focus") อยู่" : "ไม่ได้เปิด")
+                LabeledContent(tr("ตอนนี้", "Now"), value: focus.isActive
+                    ? tr("เปิดโหมด \(focus.modeName ?? "Focus") อยู่", "\(focus.modeName ?? "Focus") is on")
+                    : tr("ไม่ได้เปิด", "Off"))
             }
         }
         .formStyle(.grouped)
@@ -256,17 +274,17 @@ private struct MusicPane: View {
 
     var body: some View {
         Form {
-            Section("ตอนเล่นเพลง") {
-                DescribedToggle(title: "พลิกปกเพลงตอนเปลี่ยนเพลง", detail: "ปกหมุนเปลี่ยนเป็นปกใหม่ครั้งเดียวต่อเพลง",
+            Section(tr("ตอนเล่นเพลง", "While music plays")) {
+                DescribedToggle(title: tr("พลิกปกเพลงตอนเปลี่ยนเพลง", "Flip the cover on song change"), detail: tr("ปกหมุนเปลี่ยนเป็นปกใหม่ครั้งเดียวต่อเพลง", "The cover turns over to the new one, once per song"),
                                 isOn: $settings.artworkFlip)
-                DescribedToggle(title: "คลื่นเสียงตามเพลงจริง",
-                                detail: "แท่งบนรอยบากขยับตามเสียงที่เครื่องเล่น (ขอสิทธิ์ System Audio Recording)",
+                DescribedToggle(title: tr("คลื่นเสียงตามเพลงจริง", "Live waveform"),
+                                detail: tr("แท่งบนรอยบากขยับตามเสียงที่เครื่องเล่น (ขอสิทธิ์ System Audio Recording)", "The bars follow what your Mac is playing (asks for System Audio Recording)"),
                                 isOn: $settings.liveWaveform)
             }
-            Section("แอปเพลงที่รองรับ") {
-                LabeledContent("Apple Music", value: "ใช้ได้ทันที")
-                LabeledContent("Spotify", value: "ใช้ได้ทันที")
-                LabeledContent("YouTube Music (Chrome)", value: "ผ่านส่วนขยาย P Island for YouTube Music")
+            Section(tr("แอปเพลงที่รองรับ", "Supported music apps")) {
+                LabeledContent("Apple Music", value: tr("ใช้ได้ทันที", "Works right away"))
+                LabeledContent("Spotify", value: tr("ใช้ได้ทันที", "Works right away"))
+                LabeledContent("YouTube Music (Chrome)", value: tr("ผ่านส่วนขยาย P Island for YouTube Music", "Through the P Island for YouTube Music extension"))
             }
         }
         .formStyle(.grouped)
@@ -280,31 +298,31 @@ private struct CalendarWeatherPane: View {
 
     var body: some View {
         Form {
-            Section("ปฏิทิน") {
-                LabeledContent("การเข้าถึงปฏิทิน") {
+            Section(tr("ปฏิทิน", "Calendar")) {
+                LabeledContent(tr("การเข้าถึงปฏิทิน", "Calendar access")) {
                     switch calendar.status {
-                    case .authorized: Text("อนุญาตแล้ว").foregroundStyle(.green)
-                    case .notDetermined: Button("อนุญาต") { calendar.requestAccess() }
-                    case .denied: Button("เปิดการตั้งค่า") { calendar.openPrivacySettings() }
+                    case .authorized: Text(tr("อนุญาตแล้ว", "Allowed")).foregroundStyle(.green)
+                    case .notDetermined: Button(tr("อนุญาต", "Allow")) { calendar.requestAccess() }
+                    case .denied: Button(tr("เปิดการตั้งค่า", "Open Settings")) { calendar.openPrivacySettings() }
                     }
                 }
-                DescribedToggle(title: "เตือนก่อนประชุม", detail: "นัดที่มีลิงก์ Zoom, Meet, Teams, FaceTime หรือ Webex",
+                DescribedToggle(title: tr("เตือนก่อนประชุม", "Meeting reminders"), detail: tr("นัดที่มีลิงก์ Zoom, Meet, Teams, FaceTime หรือ Webex", "Events with a Zoom, Meet, Teams, FaceTime or Webex link"),
                                 isOn: $settings.meetingAlerts)
             }
             Section {
-                LabeledContent("เมือง") {
+                LabeledContent(tr("เมือง", "City")) {
                     HStack {
                         Text(weather.city)
-                        Button("เปลี่ยน…") { weather.chooseCity() }
+                        Button(tr("เปลี่ยน…", "Change…")) { weather.chooseCity() }
                     }
                 }
                 if let temp = weather.temperature, let code = weather.code {
-                    LabeledContent("ตอนนี้", value: "\(Int(temp.rounded()))° · \(WeatherManager.describe(code))")
+                    LabeledContent(tr("ตอนนี้", "Now"), value: "\(Int(temp.rounded()))° · \(WeatherManager.describe(code))")
                 }
             } header: {
-                Text("สภาพอากาศ")
+                Text(tr("สภาพอากาศ", "Weather"))
             } footer: {
-                Text("ข้อมูลสภาพอากาศจาก Open-Meteo.com").font(.caption).foregroundStyle(.secondary)
+                Text(tr("ข้อมูลสภาพอากาศจาก Open-Meteo.com", "Weather data from Open-Meteo.com")).font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -318,13 +336,13 @@ private struct ClipboardPane: View {
     var body: some View {
         Form {
             Section {
-                DescribedToggle(title: "เก็บประวัติคลิปบอร์ด", detail: "จำ \(ClipboardManager.limit) รายการล่าสุดที่คัดลอก",
+                DescribedToggle(title: tr("เก็บประวัติคลิปบอร์ด", "Keep clipboard history"), detail: tr("จำ \(ClipboardManager.limit) รายการล่าสุดที่คัดลอก", "Remembers the last \(ClipboardManager.limit) things you copied"),
                                 isOn: $settings.clipboardHistory)
-                LabeledContent("ตอนนี้มี", value: "\(clipboard.items.count) รายการ")
-                Button("ล้างประวัติทั้งหมด", role: .destructive) { clipboard.clear() }
+                LabeledContent(tr("ตอนนี้มี", "Items now"), value: tr("\(clipboard.items.count) รายการ", "\(clipboard.items.count)"))
+                Button(tr("ล้างประวัติทั้งหมด", "Clear All History"), role: .destructive) { clipboard.clear() }
                     .disabled(clipboard.items.isEmpty)
             } footer: {
-                Text("เก็บไว้ในหน่วยความจำเท่านั้น หายเมื่อปิดแอป และไม่เก็บรหัสผ่านจากแอปจัดการรหัสผ่าน")
+                Text(tr("เก็บไว้ในหน่วยความจำเท่านั้น หายเมื่อปิดแอป และไม่เก็บรหัสผ่านจากแอปจัดการรหัสผ่าน", "Kept in memory only, gone when the app quits, and never stores passwords from password managers"))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -339,10 +357,10 @@ private struct PermissionsPane: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text("กดปุ่มด้านขวาของแต่ละรายการเพื่อเปิดสิทธิ์ สถานะจะอัปเดตเองทันที")
+                Text(tr("กดปุ่มด้านขวาของแต่ละรายการเพื่อเปิดสิทธิ์ สถานะจะอัปเดตเองทันที", "Use the button on the right of each row to grant it. The status updates by itself."))
                     .font(.callout).foregroundStyle(.secondary)
                 PermissionsList(model: model, settings: settings)
-                Toggle("เปิดหน้านี้ตอนเปิดแอป ถ้ายังขาดสิทธิ์สำคัญ", isOn: $settings.showPermissionsAtLaunch)
+                Toggle(tr("เปิดหน้านี้ตอนเปิดแอป ถ้ายังขาดสิทธิ์สำคัญ", "Open this page at launch if something important is missing"), isOn: $settings.showPermissionsAtLaunch)
                     .font(.callout)
             }
             .padding(20)
@@ -359,25 +377,25 @@ private struct AboutPane: View {
                 .frame(width: 128, height: 128)
             Text(AppInfo.name)
                 .font(.system(size: 30, weight: .bold))
-            Text("เวอร์ชัน \(AppInfo.version) (\(AppInfo.build))")
+            Text(tr("เวอร์ชัน \(AppInfo.version) (\(AppInfo.build))", "Version \(AppInfo.version) (\(AppInfo.build))"))
                 .foregroundStyle(.secondary)
-            Text("รอยบากอัจฉริยะสำหรับ MacBook\nเพลง แจ้งเตือน ไฟล์ ปฏิทิน และอีกมากมายในที่เดียว")
+            Text(tr("รอยบากอัจฉริยะสำหรับ MacBook\nเพลง แจ้งเตือน ไฟล์ ปฏิทิน และอีกมากมายในที่เดียว", "A smart notch for your MacBook\nMusic, notifications, files, calendar and more in one place"))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
 
             Divider().frame(width: 240).padding(.vertical, 6)
 
             VStack(spacing: 4) {
-                Text("พัฒนาโดย").font(.caption).foregroundStyle(.secondary)
+                Text(tr("พัฒนาโดย", "Developed by")).font(.caption).foregroundStyle(.secondary)
                 Text(AppInfo.developer).font(.title2.weight(.semibold))
             }
 
             Spacer()
 
             VStack(spacing: 3) {
-                Text("ผู้ช่วยเขียนโค้ด: Claude (Anthropic)")
-                Text("ข้อมูลสภาพอากาศ: Open-Meteo.com (CC BY 4.0)")
-                Text("สร้างด้วย Swift และ SwiftUI")
+                Text(tr("ผู้ช่วยเขียนโค้ด: Claude (Anthropic)", "Coding assistant: Claude (Anthropic)"))
+                Text(tr("ข้อมูลสภาพอากาศ: Open-Meteo.com (CC BY 4.0)", "Weather data: Open-Meteo.com (CC BY 4.0)"))
+                Text(tr("สร้างด้วย Swift และ SwiftUI", "Built with Swift and SwiftUI"))
                 Text("© 2026 \(AppInfo.developer)")
             }
             .font(.caption)

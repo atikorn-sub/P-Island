@@ -58,7 +58,7 @@ struct NotificationCard: View {
                 if replying {
                     replyField
                 } else {
-                    Button("ตอบกลับ") { startReply() }
+                    Button(tr("ตอบกลับ", "Reply")) { startReply() }
                         .buttonStyle(PillButtonStyle())
                 }
             }
@@ -71,7 +71,7 @@ struct NotificationCard: View {
     private var replyField: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
-                TextField("ตอบกลับ \(note.title)…", text: $reply)
+                TextField(tr("ตอบกลับ \(note.title)…", "Reply to \(note.title)…"), text: $reply)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12 * s))
                     .focused($fieldFocused)
@@ -117,7 +117,7 @@ struct NotificationCard: View {
                 error = failure
             } else {
                 state.dismissAlert()
-                state.showAlert(.info(symbol: "paperplane.fill", title: "ส่งแล้ว", subtitle: text), seconds: 2)
+                state.showAlert(.info(symbol: "paperplane.fill", title: tr("ส่งแล้ว", "Sent"), subtitle: text), seconds: 2)
             }
         }
     }

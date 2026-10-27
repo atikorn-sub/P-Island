@@ -7,12 +7,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: NotchController!
     private var bluetooth: BluetoothManager!
     private var waveformObserver: AnyCancellable?
+    private var languageObserver: AnyCancellable?
     private var settingsWindow: SettingsWindowController!
     private var statusItem: NSStatusItem!
     private var launchItem: NSMenuItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let settings = AppSettings()
+        NSLog("%@", "Islet language: setting=\(Lang.setting.rawValue) thai=\(Lang.isThai) sample=\(tr("การตั้งค่า", "Settings"))")
         let state = NotchState(
             settings: settings,
             music: MusicManager(),
@@ -169,19 +171,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func setUpStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "capsule.fill", accessibilityDescription: "P Island")
+        buildStatusMenu()
+        // Menus are built once, so build again in the new language when it changes.
+        languageObserver = state.settings.$language.dropFirst().sink { [weak self] _ in
+            DispatchQueue.main.async { self?.buildStatusMenu() }
+        }
+    }
+
+    private func buildStatusMenu() {
         let menu = NSMenu()
         menu.delegate = self
-        menu.addItem(withTitle: "เปิดรอยบาก  ⌃⌥I", action: #selector(openNotch), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "เล่นเดโมฟีเจอร์", action: #selector(playDemo), keyEquivalent: "").target = self
+        menu.addItem(withTitle: tr("เปิดรอยบาก  ⌃⌥I", "Open Notch  ⌃⌥I"), action: #selector(openNotch), keyEquivalent: "").target = self
+        menu.addItem(withTitle: tr("เล่นเดโมฟีเจอร์", "Play Feature Demo"), action: #selector(playDemo), keyEquivalent: "").target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "การตั้งค่า…", action: #selector(showSettings), keyEquivalent: ",").target = self
-        menu.addItem(withTitle: "สิทธิ์การเข้าถึง…", action: #selector(showPermissions), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "เกี่ยวกับ P Island", action: #selector(showAbout), keyEquivalent: "").target = self
+        menu.addItem(withTitle: tr("การตั้งค่า…", "Settings…"), action: #selector(showSettings), keyEquivalent: ",").target = self
+        menu.addItem(withTitle: tr("สิทธิ์การเข้าถึง…", "Permissions…"), action: #selector(showPermissions), keyEquivalent: "").target = self
+        menu.addItem(withTitle: tr("เกี่ยวกับ P Island", "About P Island"), action: #selector(showAbout), keyEquivalent: "").target = self
         menu.addItem(.separator())
-        launchItem = menu.addItem(withTitle: "เปิดตอนเข้าเครื่อง", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        launchItem = menu.addItem(withTitle: tr("เปิดตอนเข้าเครื่อง", "Launch at Login"), action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         launchItem.target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "ออกจาก P Island", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: tr("ออกจาก P Island", "Quit P Island"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = menu
     }
 

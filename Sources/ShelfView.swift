@@ -13,7 +13,7 @@ struct ShelfView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "tray.and.arrow.down")
                             .font(.system(size: 26))
-                        Text("ลากไฟล์มาวางที่นี่")
+                        Text(tr("ลากไฟล์มาวางที่นี่", "Drop files here"))
                             .font(.system(size: 12, weight: .medium))
                     }
                     .foregroundStyle(.white.opacity(shelfTargeted ? 0.9 : 0.4))
@@ -43,12 +43,12 @@ struct ShelfView: View {
             VStack(spacing: 8) {
                 airDropTarget
                 if shelf.imageItems.count >= 2 {
-                    Button("รวมรูปเป็น PDF") { shelf.combineImagesToPDF() }
+                    Button(tr("รวมรูปเป็น PDF", "Images → PDF")) { shelf.combineImagesToPDF() }
                         .buttonStyle(PillButtonStyle())
-                        .help("รวมรูปทั้งหมดบนชั้นวางเป็น PDF ไฟล์เดียว")
+                        .help(tr("รวมรูปทั้งหมดบนชั้นวางเป็น PDF ไฟล์เดียว", "Combine every image on the shelf into one PDF"))
                 }
                 if !shelf.items.isEmpty {
-                    Button("ล้าง") { shelf.clear() }
+                    Button(tr("ล้าง", "Clear")) { shelf.clear() }
                         .buttonStyle(PillButtonStyle())
                 }
             }
@@ -71,7 +71,7 @@ struct ShelfView: View {
         )
         .contentShape(Rectangle())
         .onTapGesture { shelf.airDrop(shelf.items.map(\.url)) }
-        .help("ลากไฟล์มาวางเพื่อส่ง AirDrop หรือคลิกเพื่อส่งทุกไฟล์บนชั้นวาง")
+        .help(tr("ลากไฟล์มาวางเพื่อส่ง AirDrop หรือคลิกเพื่อส่งทุกไฟล์บนชั้นวาง", "Drop files to AirDrop them, or click to AirDrop the whole shelf"))
         .onDrop(of: [.fileURL], isTargeted: $airDropTargeted) { providers in
             let group = DispatchGroup()
             var urls: [URL] = []
@@ -125,26 +125,26 @@ struct ShelfItemView: View {
         .onTapGesture(count: 2) { shelf.open(item) }
         .onDrag { NSItemProvider(contentsOf: item.url) ?? NSItemProvider() }
         .contextMenu {
-            Button("เปิด") { shelf.open(item) }
-            Button("แสดงใน Finder") { shelf.reveal(item) }
-            Button("ส่ง AirDrop") { shelf.airDrop([item.url]) }
+            Button(tr("เปิด", "On")) { shelf.open(item) }
+            Button(tr("แสดงใน Finder", "Show in Finder")) { shelf.reveal(item) }
+            Button(tr("ส่ง AirDrop", "AirDrop")) { shelf.airDrop([item.url]) }
             let targets = Converter.targets(for: item.url)
             if !targets.isEmpty {
-                Menu("แปลงเป็น") {
+                Menu(tr("แปลงเป็น", "Convert to")) {
                     ForEach(targets) { target in
                         Button(target.label) { shelf.convert(item, to: target) }
                     }
                 }
             }
             if Transcriber.canTranscribe(item.url) {
-                Menu("ถอดเสียงเป็นข้อความ") {
+                Menu(tr("ถอดเสียงเป็นข้อความ", "Transcribe to text")) {
                     ForEach(Transcriber.languages, id: \.id) { language in
                         Button(language.name) { shelf.transcribe(item, language: language.id) }
                     }
                 }
             }
             Divider()
-            Button("เอาออกจากชั้นวาง") { shelf.remove(item) }
+            Button(tr("เอาออกจากชั้นวาง", "Remove from Shelf")) { shelf.remove(item) }
         }
         .help(item.url.path)
     }

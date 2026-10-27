@@ -15,6 +15,7 @@ swiftc -O -swift-version 5 \
 
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 if [ -f Resources/AppIcon.icns ]; then cp Resources/AppIcon.icns "$APP/Contents/Resources/"; fi
+cp -R Resources/*.lproj "$APP/Contents/Resources/"
 
 # Sign with the self-made "P Island Developer" certificate when it exists. A stable signature lets
 # macOS remember granted permissions across rebuilds; an ad-hoc one (-) looks like a new app each time.

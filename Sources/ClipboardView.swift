@@ -9,7 +9,7 @@ struct ClipboardView: View {
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass").foregroundStyle(.white.opacity(0.5))
-                    TextField("ค้นหาในคลิปบอร์ด", text: $query)
+                    TextField(tr("ค้นหาในคลิปบอร์ด", "Search clipboard"), text: $query)
                         .textFieldStyle(.plain)
                         .font(.system(size: 12))
                 }
@@ -17,13 +17,13 @@ struct ClipboardView: View {
                 .padding(.vertical, 5)
                 .background(Capsule().fill(Color.white.opacity(0.1)))
                 if !clipboard.items.isEmpty {
-                    Button("ล้าง") { clipboard.clear() }.buttonStyle(PillButtonStyle())
+                    Button(tr("ล้าง", "Clear")) { clipboard.clear() }.buttonStyle(PillButtonStyle())
                 }
             }
             if filtered.isEmpty {
                 VStack(spacing: 6) {
                     Image(systemName: "doc.on.clipboard").font(.system(size: 24))
-                    Text(clipboard.items.isEmpty ? "คัดลอกอะไรก็ได้ แล้วจะมาอยู่ที่นี่" : "ไม่พบรายการที่ค้นหา")
+                    Text(clipboard.items.isEmpty ? tr("คัดลอกอะไรก็ได้ แล้วจะมาอยู่ที่นี่", "Copy something and it shows up here") : tr("ไม่พบรายการที่ค้นหา", "No matches"))
                         .font(.system(size: 12, weight: .medium))
                 }
                 .foregroundStyle(.white.opacity(0.4))
@@ -73,7 +73,7 @@ struct ClipRow: View {
             }
             Spacer(minLength: 0)
             if clipboard.lastCopiedID == item.id {
-                Label("คัดลอกแล้ว", systemImage: "checkmark")
+                Label(tr("คัดลอกแล้ว", "Copied"), systemImage: "checkmark")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.green)
             } else if hovering {
@@ -90,10 +90,10 @@ struct ClipRow: View {
         .onTapGesture { clipboard.copy(item) }
         .onDrag { clipboard.dragProvider(for: item) }
         .contextMenu {
-            Button("คัดลอก") { clipboard.copy(item) }
-            Button("ลบ") { clipboard.remove(item) }
+            Button(tr("คัดลอก", "Copy")) { clipboard.copy(item) }
+            Button(tr("ลบ", "Delete")) { clipboard.remove(item) }
         }
-        .help("คลิกเพื่อคัดลอกอีกครั้ง")
+        .help(tr("คลิกเพื่อคัดลอกอีกครั้ง", "Click to copy again"))
     }
 
     @ViewBuilder private var preview: some View {
@@ -116,14 +116,14 @@ struct ClipRow: View {
         switch item.content {
         case .text(let s):
             return s.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: " ")
-        case .image: return "รูปภาพ"
+        case .image: return tr("รูปภาพ", "Image")
         case .files(let urls):
             return urls.count == 1 ? urls[0].lastPathComponent : "\(urls[0].lastPathComponent) +\(urls.count - 1)"
         }
     }
 
     private var subtitle: String {
-        let time = item.date.formatted(.dateTime.hour().minute().locale(.thai))
+        let time = item.date.formatted(.dateTime.hour().minute().locale(Lang.locale))
         return [item.sourceApp, time].compactMap { $0 }.joined(separator: " · ")
     }
 }

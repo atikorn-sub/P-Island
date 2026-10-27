@@ -55,15 +55,15 @@ enum Demo {
     static func runAlerts(state: NotchState) {
         let meetingURL = URL(string: "https://meet.google.com/")!
         let steps: [(String, NotchAlert, Double)] = [
-            ("song peek", .nowPlaying(title: state.music.hasTrack ? state.music.title : "ตัวอย่างเพลง",
-                                      artist: state.music.hasTrack ? state.music.artist : "ศิลปินตัวอย่าง"), 3),
+            ("song peek", .nowPlaying(title: state.music.hasTrack ? state.music.title : tr("ตัวอย่างเพลง", "Sample Song"),
+                                      artist: state.music.hasTrack ? state.music.artist : tr("ศิลปินตัวอย่าง", "Sample Artist")), 3),
             ("volume", .volume(level: state.controls.volume, muted: state.controls.muted), 3),
             ("brightness", .brightness(level: state.controls.brightness ?? 0.6), 3),
             ("bluetooth", .bluetooth(name: "AirPods Pro", kind: .airpodsPro, connected: true,
-                                     battery: "L 80% · R 85% · เคส 60%"), 3.5),
-            ("meeting", .meeting(title: "ประชุมทีม (ตัวอย่าง)", url: meetingURL, start: Date().addingTimeInterval(60)), 4.5),
-            ("notification", .notification(AppNotification(bundleID: MessagesReplier.bundleID, title: "ตัวอย่าง",
-                                                           subtitle: "", body: "นี่คือตัวอย่างแจ้งเตือนจาก Messages",
+                                     battery: tr("L 80% · R 85% · เคส 60%", "L 80% · R 85% · Case 60%")), 3.5),
+            ("meeting", .meeting(title: tr("ประชุมทีม (ตัวอย่าง)", "Team meeting (sample)"), url: meetingURL, start: Date().addingTimeInterval(60)), 4.5),
+            ("notification", .notification(AppNotification(bundleID: MessagesReplier.bundleID, title: tr("ตัวอย่าง", "Sample"),
+                                                           subtitle: "", body: tr("นี่คือตัวอย่างแจ้งเตือนจาก Messages", "This is a sample notification from Messages"),
                                                            date: Date()), replying: false), 5),
             ("battery estimate", .batteryEstimate(level: state.battery.level, minutes: 205), 3.5),
         ]

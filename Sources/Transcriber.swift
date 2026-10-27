@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 /// Turns speech in an audio or video file into a .txt file, using Apple's speech recognition.
 /// Long files are cut into short pieces, because server-side recognition stops after about a minute.
 enum Transcriber {
-    static let languages: [(name: String, id: String)] = [("ภาษาไทย", "th-TH"), ("English", "en-US")]
+    static var languages: [(name: String, id: String)] { [(tr("ภาษาไทย", "Thai"), "th-TH"), ("English", "en-US")] }
 
     static func canTranscribe(_ url: URL) -> Bool {
         guard let type = UTType(filenameExtension: url.pathExtension) else { return false }
@@ -16,14 +16,14 @@ enum Transcriber {
     /// Completion gets the transcript file, or a message explaining what went wrong.
     static func transcribe(_ source: URL, language: String, completion: @escaping (Result<URL, TranscriptionError>) -> Void) {
         authorize { granted in
-            guard granted else { return completion(.failure(.init("ต้องอนุญาต Speech Recognition ก่อน"))) }
+            guard granted else { return completion(.failure(.init(tr("ต้องอนุญาต Speech Recognition ก่อน", "Allow Speech Recognition first")))) }
             guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: language)), recognizer.isAvailable else {
-                return completion(.failure(.init("ยังถอดเสียงภาษานี้ไม่ได้ตอนนี้")))
+                return completion(.failure(.init(tr("ยังถอดเสียงภาษานี้ไม่ได้ตอนนี้", "This language can't be transcribed right now"))))
             }
             let asset = AVURLAsset(url: source)
             Task {
                 let duration = (try? await asset.load(.duration).seconds) ?? 0
-                guard duration > 0 else { return completion(.failure(.init("อ่านไฟล์เสียงไม่ได้"))) }
+                guard duration > 0 else { return completion(.failure(.init(tr("อ่านไฟล์เสียงไม่ได้", "Couldn't read the audio")))) }
                 let job = Job(asset: asset, duration: duration, recognizer: recognizer, source: source, completion: completion)
                 await MainActor.run { job.next() }
             }
@@ -75,7 +75,7 @@ enum Transcriber {
             let piece = FileManager.default.temporaryDirectory
                 .appendingPathComponent("PIsland-piece-\(UUID().uuidString).m4a")
             guard let export = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
-                return fail("ตัดไฟล์เสียงไม่ได้")
+                return fail(tr("ตัดไฟล์เสียงไม่ได้", "Couldn't split the audio"))
             }
             export.outputURL = piece
             export.outputFileType = .m4a
@@ -83,7 +83,7 @@ enum Transcriber {
                                            duration: CMTime(seconds: min(Self.pieceLength, duration - start), preferredTimescale: 600))
             export.exportAsynchronously { [self] in
                 DispatchQueue.main.async {
-                    guard export.status == .completed else { return self.fail("ตัดไฟล์เสียงไม่ได้") }
+                    guard export.status == .completed else { return self.fail(tr("ตัดไฟล์เสียงไม่ได้", "Couldn't split the audio")) }
                     self.recognize(piece)
                 }
             }
@@ -105,7 +105,7 @@ enum Transcriber {
 
         private func finish() {
             let text = parts.joined(separator: "\n\n")
-            guard !text.isEmpty else { return fail("ไม่พบเสียงพูดในไฟล์นี้") }
+            guard !text.isEmpty else { return fail(tr("ไม่พบเสียงพูดในไฟล์นี้", "No speech found in this file")) }
             var dir = source.deletingLastPathComponent()
             if !FileManager.default.isWritableFile(atPath: dir.path) {
                 dir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
@@ -121,7 +121,7 @@ enum Transcriber {
                 try text.write(to: output, atomically: true, encoding: .utf8)
                 done(.success(output))
             } catch {
-                fail("บันทึกไฟล์ไม่ได้")
+                fail(tr("บันทึกไฟล์ไม่ได้", "Couldn't save the file"))
             }
         }
 

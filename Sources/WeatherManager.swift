@@ -52,26 +52,26 @@ final class WeatherManager: ObservableObject {
     func chooseCity() {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
-        alert.messageText = "เมืองสำหรับสภาพอากาศ"
-        alert.informativeText = "พิมพ์ชื่อเมือง เช่น กรุงเทพ, เชียงใหม่ หรือ Tokyo"
+        alert.messageText = tr("เมืองสำหรับสภาพอากาศ", "Weather city")
+        alert.informativeText = tr("พิมพ์ชื่อเมือง เช่น กรุงเทพ, เชียงใหม่ หรือ Tokyo", "Type a city name, e.g. Bangkok, Chiang Mai or Tokyo")
         let field = NSTextField(string: city)
         field.frame = NSRect(x: 0, y: 0, width: 240, height: 24)
         alert.accessoryView = field
-        alert.addButton(withTitle: "บันทึก")
-        alert.addButton(withTitle: "ยกเลิก")
+        alert.addButton(withTitle: tr("บันทึก", "Save"))
+        alert.addButton(withTitle: tr("ยกเลิก", "Cancel"))
         alert.window.initialFirstResponder = field
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         let name = field.stringValue.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
         var c = URLComponents(string: "https://geocoding-api.open-meteo.com/v1/search")!
-        c.queryItems = [.init(name: "name", value: name), .init(name: "count", value: "1"), .init(name: "language", value: "th")]
+        c.queryItems = [.init(name: "name", value: name), .init(name: "count", value: "1"), .init(name: "language", value: Lang.code)]
         URLSession.shared.dataTask(with: c.url!) { [weak self] data, _, _ in
             let place = data.flatMap { try? JSONDecoder().decode(Places.self, from: $0) }?.results?.first
             DispatchQueue.main.async {
                 guard let self else { return }
                 guard let place else {
                     let notFound = NSAlert()
-                    notFound.messageText = "ไม่พบเมือง “\(name)”"
+                    notFound.messageText = tr("ไม่พบเมือง “\(name)”", "Couldn't find “\(name)”")
                     notFound.runModal()
                     return
                 }
@@ -124,17 +124,17 @@ final class WeatherManager: ObservableObject {
 
     static func describe(_ code: Int) -> String {
         switch code {
-        case 0: return "ท้องฟ้าแจ่มใส"
-        case 1, 2: return "มีเมฆบางส่วน"
-        case 3: return "เมฆมาก"
-        case 45, 48: return "หมอก"
-        case 51...57: return "ฝนปรอย"
-        case 61, 63, 66: return "ฝนตก"
-        case 65, 67: return "ฝนตกหนัก"
-        case 71...77, 85, 86: return "หิมะตก"
-        case 80...82: return "ฝนตกเป็นช่วง ๆ"
-        case 95...99: return "พายุฝนฟ้าคะนอง"
-        default: return "มีเมฆ"
+        case 0: return tr("ท้องฟ้าแจ่มใส", "Clear sky")
+        case 1, 2: return tr("มีเมฆบางส่วน", "Partly cloudy")
+        case 3: return tr("เมฆมาก", "Cloudy")
+        case 45, 48: return tr("หมอก", "Fog")
+        case 51...57: return tr("ฝนปรอย", "Drizzle")
+        case 61, 63, 66: return tr("ฝนตก", "Rain")
+        case 65, 67: return tr("ฝนตกหนัก", "Heavy rain")
+        case 71...77, 85, 86: return tr("หิมะตก", "Snow")
+        case 80...82: return tr("ฝนตกเป็นช่วง ๆ", "Showers")
+        case 95...99: return tr("พายุฝนฟ้าคะนอง", "Thunderstorm")
+        default: return tr("มีเมฆ", "Clouds")
         }
     }
 

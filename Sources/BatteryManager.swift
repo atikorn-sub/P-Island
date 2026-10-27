@@ -48,8 +48,8 @@ final class BatteryManager: ObservableObject {
     /// e.g. "1 ชม. 20 นาที" or "25 นาที".
     static func formatMinutes(_ minutes: Int) -> String {
         let h = minutes / 60, m = minutes % 60
-        if h == 0 { return "\(m) นาที" }
-        return m == 0 ? "\(h) ชม." : "\(h) ชม. \(m) นาที"
+        if h == 0 { return tr("\(m) นาที", "\(m) min") }
+        return m == 0 ? tr("\(h) ชม.", "\(h) hr") : tr("\(h) ชม. \(m) นาที", "\(h) hr \(m) min")
     }
 
     private func refresh(initial: Bool) {

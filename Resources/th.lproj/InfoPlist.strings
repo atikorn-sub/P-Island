@@ -1,0 +1,6 @@
+/* ข้อความที่ macOS แสดงตอน P Island ขอสิทธิ์ */
+"NSAppleEventsUsageDescription" = "P Island ใช้อ่านเพลงที่กำลังเล่นใน Music และ Spotify ควบคุมการเล่นเพลงจากรอยบาก และส่งข้อความตอบกลับที่คุณพิมพ์ผ่าน Messages";
+"NSCalendarsFullAccessUsageDescription" = "P Island ใช้แสดงนัดหมายของคุณที่รอยบาก และเตือนก่อนเริ่มประชุม";
+"NSBluetoothAlwaysUsageDescription" = "P Island ใช้แจ้งเตือนเมื่อ AirPods และอุปกรณ์บลูทูธเชื่อมต่อ พร้อมบอก % แบตเตอรี่";
+"NSSpeechRecognitionUsageDescription" = "P Island ใช้ถอดเสียงจากไฟล์เสียงหรือวิดีโอเป็นข้อความ เมื่อคุณสั่งเท่านั้น";
+"NSAudioCaptureUsageDescription" = "P Island ฟังเสียงที่เครื่องกำลังเล่น เพื่อให้คลื่นเสียงที่รอยบากขยับตามเพลง ไม่มีการอัดหรือบันทึกเสียงใด ๆ";

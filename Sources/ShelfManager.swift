@@ -107,9 +107,9 @@ final class ShelfManager: ObservableObject {
                 switch result {
                 case .success(let url):
                     self.add([url])
-                    self.onMessage?("ถอดเสียงเสร็จแล้ว", url.lastPathComponent, true)
+                    self.onMessage?(tr("ถอดเสียงเสร็จแล้ว", "Transcript ready"), url.lastPathComponent, true)
                 case .failure(let error):
-                    self.onMessage?("ถอดเสียงไม่สำเร็จ", error.message, false)
+                    self.onMessage?(tr("ถอดเสียงไม่สำเร็จ", "Couldn't transcribe"), error.message, false)
                 }
             }
         }
@@ -175,7 +175,7 @@ enum ConversionTarget: String, CaseIterable, Identifiable {
         case .tiff: return "TIFF"
         case .mp4: return "MP4"
         case .mov: return "MOV"
-        case .m4a: return "M4A (เฉพาะเสียง)"
+        case .m4a: return tr("M4A (เฉพาะเสียง)", "M4A (audio only)")
         case .pdf: return "PDF"
         }
     }
