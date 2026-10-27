@@ -1,0 +1,23 @@
+P Island — a smart notch for your MacBook
+==========================================
+
+INSTALL
+1. Drag "P Island" onto the "Applications" folder in this window.
+2. Open P Island from Applications or Launchpad.
+3. macOS will say it can't check the developer. Open
+   System Settings › Privacy & Security, scroll down and click "Open Anyway".
+   (You only need to do this once.)
+4. The Settings window opens on "Permissions". Give the ones you want.
+
+Full guide: https://github.com/atikorn-sub/P-Island
+
+
+วิธีติดตั้ง
+1. ลาก "P Island" ไปวางบนโฟลเดอร์ "Applications" ในหน้าต่างนี้
+2. เปิด P Island จาก Applications หรือ Launchpad
+3. macOS จะแจ้งว่าตรวจสอบผู้พัฒนาไม่ได้ ให้เปิด
+   System Settings › Privacy & Security เลื่อนลงแล้วกด "Open Anyway"
+   (ทำแค่ครั้งแรกครั้งเดียว)
+4. หน้าต่างตั้งค่าจะเปิดที่หมวด "สิทธิ์การเข้าถึง" กดอนุญาตสิทธิ์ที่ต้องการ
+
+คู่มือฉบับเต็ม: https://github.com/atikorn-sub/P-Island
