@@ -60,7 +60,8 @@ struct MonthGrid: View {
     }
 
     private var weekdaySymbols: [String] {
-        let cal = Calendar.current
+        var cal = Calendar.current
+        cal.locale = .thai
         let symbols = cal.veryShortStandaloneWeekdaySymbols
         let first = cal.firstWeekday - 1
         return Array(symbols[first...] + symbols[..<first])
@@ -108,14 +109,14 @@ struct DayEvents: View {
                 .foregroundStyle(.red)
             switch calendar.status {
             case .notDetermined:
-                Text("See your events here").font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
-                Button("Allow Calendar") { calendar.requestAccess() }.buttonStyle(PillButtonStyle())
+                Text("ดูนัดหมายของคุณที่นี่").font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
+                Button("อนุญาตปฏิทิน") { calendar.requestAccess() }.buttonStyle(PillButtonStyle())
             case .denied:
-                Text("No calendar access").font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
-                Button("Open Settings") { calendar.openPrivacySettings() }.buttonStyle(PillButtonStyle())
+                Text("ยังไม่ได้อนุญาตปฏิทิน").font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
+                Button("เปิดการตั้งค่า") { calendar.openPrivacySettings() }.buttonStyle(PillButtonStyle())
             case .authorized:
                 if calendar.selectedEvents.isEmpty {
-                    Text("No events").font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
+                    Text("ไม่มีนัดหมาย").font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 6) {
@@ -143,7 +144,7 @@ struct WeatherCard: View {
                 .foregroundStyle(.white.opacity(0.7))
             }
             .buttonStyle(.plain)
-            .help("Change city")
+            .help("เปลี่ยนเมือง")
 
             if let temp = weather.temperature, let code = weather.code {
                 HStack(spacing: 6) {
@@ -157,7 +158,7 @@ struct WeatherCard: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.7))
                 if let today = weather.days.first {
-                    Text("H \(Int(today.high.rounded()))°  L \(Int(today.low.rounded()))°")
+                    Text("สูงสุด \(Int(today.high.rounded()))°  ต่ำสุด \(Int(today.low.rounded()))°")
                         .font(.system(size: 10).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -177,11 +178,11 @@ struct WeatherCard: View {
                 }
                 .padding(.top, 2)
             } else {
-                Text(weather.failed ? "Weather unavailable" : "Loading…")
+                Text(weather.failed ? "โหลดสภาพอากาศไม่ได้" : "กำลังโหลด…")
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.5))
                 if weather.failed {
-                    Button("Retry") { weather.refresh() }.buttonStyle(PillButtonStyle())
+                    Button("ลองใหม่") { weather.refresh() }.buttonStyle(PillButtonStyle())
                 }
             }
             Spacer(minLength: 0)

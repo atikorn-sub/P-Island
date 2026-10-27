@@ -211,7 +211,7 @@ struct PermissionsView: View {
 
             VStack(spacing: 0) {
                 PermissionRow(symbol: "bell.badge.fill", color: .red, title: "Full Disk Access",
-                              reason: "แสดงแจ้งเตือนจากแอปอื่น และตอบ iMessage จากรอยบาก",
+                              reason: "แสดงแจ้งเตือนจากแอปอื่น ตอบ iMessage จากรอยบาก และรู้ว่าเปิดโหมด Focus อยู่",
                               hint: model.fullDisk == .granted ? nil
                                   : "ลาก P Island จาก Finder ลงในรายการ แล้วเปิดสวิตช์ (ถ้ามีชื่อเดิมอยู่ ให้ลบออกก่อน)",
                               state: model.fullDisk, action: model.fixFullDisk)
@@ -266,6 +266,7 @@ struct PermissionsView: View {
         }
         .padding(20)
         .frame(width: 560)
+        .environment(\.locale, .thai)
     }
 }
 

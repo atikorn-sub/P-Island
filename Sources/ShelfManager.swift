@@ -175,7 +175,7 @@ enum ConversionTarget: String, CaseIterable, Identifiable {
         case .tiff: return "TIFF"
         case .mp4: return "MP4"
         case .mov: return "MOV"
-        case .m4a: return "M4A (audio only)"
+        case .m4a: return "M4A (เฉพาะเสียง)"
         case .pdf: return "PDF"
         }
     }

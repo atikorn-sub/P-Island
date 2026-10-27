@@ -13,7 +13,7 @@ struct ShelfView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "tray.and.arrow.down")
                             .font(.system(size: 26))
-                        Text("Drop files here")
+                        Text("ลากไฟล์มาวางที่นี่")
                             .font(.system(size: 12, weight: .medium))
                     }
                     .foregroundStyle(.white.opacity(shelfTargeted ? 0.9 : 0.4))
@@ -43,12 +43,12 @@ struct ShelfView: View {
             VStack(spacing: 8) {
                 airDropTarget
                 if shelf.imageItems.count >= 2 {
-                    Button("Images → PDF") { shelf.combineImagesToPDF() }
+                    Button("รวมรูปเป็น PDF") { shelf.combineImagesToPDF() }
                         .buttonStyle(PillButtonStyle())
-                        .help("Combine every image on the shelf into one PDF")
+                        .help("รวมรูปทั้งหมดบนชั้นวางเป็น PDF ไฟล์เดียว")
                 }
                 if !shelf.items.isEmpty {
-                    Button("Clear") { shelf.clear() }
+                    Button("ล้าง") { shelf.clear() }
                         .buttonStyle(PillButtonStyle())
                 }
             }
@@ -71,7 +71,7 @@ struct ShelfView: View {
         )
         .contentShape(Rectangle())
         .onTapGesture { shelf.airDrop(shelf.items.map(\.url)) }
-        .help("Drop files to AirDrop them, or click to AirDrop everything on the shelf")
+        .help("ลากไฟล์มาวางเพื่อส่ง AirDrop หรือคลิกเพื่อส่งทุกไฟล์บนชั้นวาง")
         .onDrop(of: [.fileURL], isTargeted: $airDropTargeted) { providers in
             let group = DispatchGroup()
             var urls: [URL] = []
@@ -125,26 +125,26 @@ struct ShelfItemView: View {
         .onTapGesture(count: 2) { shelf.open(item) }
         .onDrag { NSItemProvider(contentsOf: item.url) ?? NSItemProvider() }
         .contextMenu {
-            Button("Open") { shelf.open(item) }
-            Button("Show in Finder") { shelf.reveal(item) }
-            Button("AirDrop") { shelf.airDrop([item.url]) }
+            Button("เปิด") { shelf.open(item) }
+            Button("แสดงใน Finder") { shelf.reveal(item) }
+            Button("ส่ง AirDrop") { shelf.airDrop([item.url]) }
             let targets = Converter.targets(for: item.url)
             if !targets.isEmpty {
-                Menu("Convert to") {
+                Menu("แปลงเป็น") {
                     ForEach(targets) { target in
                         Button(target.label) { shelf.convert(item, to: target) }
                     }
                 }
             }
             if Transcriber.canTranscribe(item.url) {
-                Menu("Transcribe to text") {
+                Menu("ถอดเสียงเป็นข้อความ") {
                     ForEach(Transcriber.languages, id: \.id) { language in
                         Button(language.name) { shelf.transcribe(item, language: language.id) }
                     }
                 }
             }
             Divider()
-            Button("Remove from Shelf") { shelf.remove(item) }
+            Button("เอาออกจากชั้นวาง") { shelf.remove(item) }
         }
         .help(item.url.path)
     }

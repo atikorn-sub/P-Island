@@ -52,26 +52,26 @@ final class WeatherManager: ObservableObject {
     func chooseCity() {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
-        alert.messageText = "Weather city"
-        alert.informativeText = "Type a city name, e.g. Bangkok, Chiang Mai or Tokyo."
+        alert.messageText = "เมืองสำหรับสภาพอากาศ"
+        alert.informativeText = "พิมพ์ชื่อเมือง เช่น กรุงเทพ, เชียงใหม่ หรือ Tokyo"
         let field = NSTextField(string: city)
         field.frame = NSRect(x: 0, y: 0, width: 240, height: 24)
         alert.accessoryView = field
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: "บันทึก")
+        alert.addButton(withTitle: "ยกเลิก")
         alert.window.initialFirstResponder = field
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         let name = field.stringValue.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
         var c = URLComponents(string: "https://geocoding-api.open-meteo.com/v1/search")!
-        c.queryItems = [.init(name: "name", value: name), .init(name: "count", value: "1")]
+        c.queryItems = [.init(name: "name", value: name), .init(name: "count", value: "1"), .init(name: "language", value: "th")]
         URLSession.shared.dataTask(with: c.url!) { [weak self] data, _, _ in
             let place = data.flatMap { try? JSONDecoder().decode(Places.self, from: $0) }?.results?.first
             DispatchQueue.main.async {
                 guard let self else { return }
                 guard let place else {
                     let notFound = NSAlert()
-                    notFound.messageText = "Couldn't find “\(name)”"
+                    notFound.messageText = "ไม่พบเมือง “\(name)”"
                     notFound.runModal()
                     return
                 }

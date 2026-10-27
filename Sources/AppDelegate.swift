@@ -62,7 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             controller?.open(tab: .timer, sticky: 6)
         }
         state.music.onTrackChange = { [weak state] title, artist in
-            guard let state, state.settings.songPeek, !state.isOpen else { return }
+            guard let state, state.settings.songPeek, !state.isOpen, !state.isQuiet else { return }
             state.showAlert(.nowPlaying(title: title, artist: artist), seconds: 3)
         }
         state.controls.onVolumeChange = { [weak state] in
@@ -86,10 +86,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         state.notifications.isEnabled = { [weak settings] in settings?.appNotifications ?? false }
         state.notifications.onNotification = { [weak state] note in
-            guard let state, !state.isOpen else { return }
+            guard let state, !state.isOpen, !state.isQuiet else { return }
             // Don't cover a reply that is being typed.
             if case .notification(_, true) = state.alert { return }
             state.showAlert(.notification(note, replying: false), seconds: 6)
+        }
+
+        state.focus.onChange = { [weak state] on, _ in
+            guard let state, state.settings.respectFocus, !state.isOpen else { return }
+            state.flash(.focus(on: on), seconds: 2.5)
+        }
+        if CommandLine.arguments.contains("--debug-focus") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { state.focus.dumpForDebugging() }
         }
 
         // The live waveform listens only while music is playing and the option is on.
@@ -103,7 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         bluetooth = BluetoothManager()
         bluetooth.onEvent = { [weak state] name, kind, connected, batteryText in
-            guard let state, state.settings.bluetoothAlerts, !state.isOpen else { return }
+            guard let state, state.settings.bluetoothAlerts, !state.isOpen, !state.isQuiet else { return }
             state.showAlert(.bluetooth(name: name, kind: kind, connected: connected, battery: batteryText), seconds: 3.5)
         }
         bluetooth.start()
@@ -157,14 +165,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.image = NSImage(systemSymbolName: "capsule.fill", accessibilityDescription: "P Island")
         let menu = NSMenu()
         menu.delegate = self
-        menu.addItem(withTitle: "Open Notch  ⌃⌥I", action: #selector(openNotch), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "Play Feature Demo", action: #selector(playDemo), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "Permissions…", action: #selector(showPermissions), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "เปิดรอยบาก  ⌃⌥I", action: #selector(openNotch), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "เล่นเดโมฟีเจอร์", action: #selector(playDemo), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "ตั้งค่าสิทธิ์…", action: #selector(showPermissions), keyEquivalent: "").target = self
         menu.addItem(.separator())
-        launchItem = menu.addItem(withTitle: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        launchItem = menu.addItem(withTitle: "เปิดตอนเข้าเครื่อง", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         launchItem.target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit P Island", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: "ออกจาก P Island", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = menu
     }
 

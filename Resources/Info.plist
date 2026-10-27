@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>th</string>
 	<key>CFBundleDisplayName</key>
 	<string>P Island</string>
 	<key>CFBundleExecutable</key>
@@ -23,16 +25,16 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>P Island reads the current song from Music and Spotify and controls playback from the notch.</string>
+	<string>P Island ใช้อ่านเพลงที่กำลังเล่นใน Music และ Spotify ควบคุมการเล่นเพลงจากรอยบาก และส่งข้อความตอบกลับที่คุณพิมพ์ผ่าน Messages</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>P Island listens to what your Mac is playing to animate the music waveform. Nothing is recorded or saved.</string>
+	<string>P Island ฟังเสียงที่เครื่องกำลังเล่น เพื่อให้คลื่นเสียงที่รอยบากขยับตามเพลง ไม่มีการอัดหรือบันทึกเสียงใด ๆ</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>P Island shows when your AirPods and other Bluetooth devices connect, with their battery levels.</string>
+	<string>P Island ใช้แจ้งเตือนเมื่อ AirPods และอุปกรณ์บลูทูธเชื่อมต่อ พร้อมบอก % แบตเตอรี่</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>P Island shows today's upcoming events in the notch.</string>
+	<string>P Island ใช้แสดงนัดหมายของคุณที่รอยบาก และเตือนก่อนเริ่มประชุม</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>P Island turns speech in your audio and video files into text when you ask it to.</string>
+	<string>P Island ใช้ถอดเสียงจากไฟล์เสียงหรือวิดีโอเป็นข้อความ เมื่อคุณสั่งเท่านั้น</string>
 </dict>
 </plist>

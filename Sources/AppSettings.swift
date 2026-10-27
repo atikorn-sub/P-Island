@@ -33,6 +33,10 @@ final class AppSettings: ObservableObject {
     @Published var liveWaveform: Bool {
         didSet { defaults.set(liveWaveform, forKey: "liveWaveform") }
     }
+    /// While a Focus is on, hold back app notifications, song peeks and Bluetooth cards.
+    @Published var respectFocus: Bool {
+        didSet { defaults.set(respectFocus, forKey: "respectFocus") }
+    }
     @Published var showPermissionsAtLaunch: Bool {
         didSet { defaults.set(showPermissionsAtLaunch, forKey: "showPermissionsAtLaunch") }
     }
@@ -48,15 +52,16 @@ final class AppSettings: ObservableObject {
     }
 
     static let sizeOptions: [(name: String, scale: Double)] = [
-        ("Small", 0.85), ("Default", 1.0), ("Large", 1.15), ("Extra Large", 1.3),
+        ("เล็ก", 0.85), ("ปกติ", 1.0), ("ใหญ่", 1.15), ("ใหญ่มาก", 1.3),
     ]
 
     init() {
         defaults.register(defaults: [
             "haptics": true, "batteryAlerts": true, "sizeScale": 1.0, "songPeek": true, "volumeHUD": true,
             "bluetoothAlerts": true, "meetingAlerts": true, "clipboardHistory": true,
-            "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true,
+            "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true, "respectFocus": true,
         ])
+        respectFocus = defaults.bool(forKey: "respectFocus")
         showPermissionsAtLaunch = defaults.bool(forKey: "showPermissionsAtLaunch")
         appNotifications = defaults.bool(forKey: "appNotifications")
         liveWaveform = defaults.bool(forKey: "liveWaveform")

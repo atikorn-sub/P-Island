@@ -17,11 +17,11 @@ enum NotchTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: return "Home"
-        case .calendar: return "Calendar & Weather"
-        case .shelf: return "Shelf"
-        case .clipboard: return "Clipboard"
-        case .timer: return "Timer"
+        case .home: return "หน้าหลัก"
+        case .calendar: return "ปฏิทินและสภาพอากาศ"
+        case .shelf: return "ชั้นวางไฟล์"
+        case .clipboard: return "คลิปบอร์ด"
+        case .timer: return "ตัวจับเวลา"
         }
     }
 }
@@ -31,6 +31,7 @@ enum TransientActivity: Equatable {
     case charging(Int)
     case unplugged(Int)
     case shelfAdded(Int)
+    case focus(on: Bool)
 }
 
 enum BluetoothKind: Equatable {
@@ -126,6 +127,10 @@ final class NotchState: ObservableObject {
     let weather: WeatherManager
     let notifications = NotificationsManager()
     let audioLevels = AudioLevelMonitor()
+    let focus = FocusMonitor()
+
+    /// A Focus is on and the user wants P Island to stay quiet during it.
+    var isQuiet: Bool { settings.respectFocus && focus.isActive }
 
     /// Open panel size at 100 %; the panel is laid out at this size and then scaled.
     static let baseOpenSize = CGSize(width: 640, height: 236)

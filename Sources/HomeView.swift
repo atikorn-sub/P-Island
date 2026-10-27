@@ -39,7 +39,7 @@ struct NowPlayingCard: View {
                     }
                     .contentShape(Rectangle())
                     .onTapGesture { music.openPlayer() }
-                    .help("Open in \(music.player?.rawValue ?? "player")")
+                    .help("เปิดใน \(music.player?.rawValue ?? "แอปเพลง")")
                     Spacer(minLength: 6)
                     ProgressRow(music: music)
                     controls.padding(.top, 4)
@@ -75,18 +75,18 @@ struct NowPlayingCard: View {
                 .font(.system(size: 28))
                 .foregroundStyle(.white.opacity(0.3))
             if let p = music.needsPermission {
-                Text("Allow P Island to control \(p.rawValue)")
+                Text("อนุญาตให้ P Island ควบคุม \(p.rawValue)")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.white.opacity(0.7))
-                Button("Open Automation Settings") { music.openAutomationSettings() }
+                Button("เปิดการตั้งค่า Automation") { music.openAutomationSettings() }
                     .buttonStyle(PillButtonStyle())
             } else {
-                Text("Nothing playing")
+                Text("ไม่มีเพลงที่กำลังเล่น")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.5))
                 HStack(spacing: 8) {
                     ForEach(music.installedPlayers) { p in
-                        Button("Open \(p.rawValue)") { music.openPlayer(p) }
+                        Button("เปิด \(p.rawValue)") { music.openPlayer(p) }
                             .buttonStyle(PillButtonStyle())
                     }
                 }
@@ -209,20 +209,20 @@ struct CalendarCard: View {
             }
             switch calendar.status {
             case .notDetermined:
-                message("See today's events here")
-                Button("Allow Calendar") { calendar.requestAccess() }.buttonStyle(PillButtonStyle())
+                message("ดูนัดหมายวันนี้ที่นี่")
+                Button("อนุญาตปฏิทิน") { calendar.requestAccess() }.buttonStyle(PillButtonStyle())
             case .denied:
-                message("No calendar access")
-                Button("Open Settings") { calendar.openPrivacySettings() }.buttonStyle(PillButtonStyle())
+                message("ยังไม่ได้อนุญาตปฏิทิน")
+                Button("เปิดการตั้งค่า") { calendar.openPrivacySettings() }.buttonStyle(PillButtonStyle())
             case .authorized:
                 if calendar.events.isEmpty {
-                    message("No more events today")
+                    message("วันนี้ไม่มีนัดแล้ว")
                 } else {
                     ForEach(calendar.events.prefix(3)) { event in
                         EventRow(event: event)
                     }
                     if calendar.events.count > 3 {
-                        message("+\(calendar.events.count - 3) more")
+                        message("และอีก \(calendar.events.count - 3) นัด")
                     }
                 }
             }
@@ -250,7 +250,7 @@ struct EventRow: View {
                     .lineLimit(1)
                 Group {
                     if event.isAllDay {
-                        Text("All day")
+                        Text("ทั้งวัน")
                     } else {
                         Text(event.start, format: .dateTime.hour().minute()) + Text(" – ") + Text(event.end, format: .dateTime.hour().minute())
                     }
@@ -267,7 +267,7 @@ struct EventRow: View {
                         .background(Circle().fill(Color.green.opacity(0.8)))
                 }
                 .buttonStyle(.plain)
-                .help("Join meeting")
+                .help("เข้าร่วมประชุม")
             }
         }
     }

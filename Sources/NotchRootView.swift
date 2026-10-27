@@ -1,5 +1,10 @@
 import SwiftUI
 
+extension Locale {
+    /// The app speaks Thai: Thai month and weekday names, 24-hour time and the Buddhist year.
+    static let thai = Locale(identifier: "th_TH")
+}
+
 struct NotchRootView: View {
     @ObservedObject var state: NotchState
     @ObservedObject private var music: MusicManager
@@ -41,6 +46,7 @@ struct NotchRootView: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.82), value: state.closedActivity)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: settings.sizeScale)
         .environment(\.colorScheme, .dark)
+        .environment(\.locale, .thai)
         .ignoresSafeArea()
     }
 }
@@ -83,6 +89,8 @@ struct ClosedNotchView: View {
             BatteryGauge(level: level, width: 24)
         case .transient(.shelfAdded):
             Image(systemName: "tray.and.arrow.down.fill").font(.system(size: 14, weight: .semibold)).foregroundStyle(.blue)
+        case .transient(.focus(let on)):
+            Image(systemName: on ? "moon.fill" : "moon").font(.system(size: 14, weight: .semibold)).foregroundStyle(.indigo)
         }
     }
 
@@ -112,6 +120,7 @@ private extension TransientActivity {
         switch self {
         case .charging(let l), .unplugged(let l): return "\(l)%"
         case .shelfAdded(let n): return "+\(n)"
+        case .focus(let on): return on ? "เปิด" : "ปิด"
         }
     }
 
@@ -119,6 +128,7 @@ private extension TransientActivity {
         switch self {
         case .charging(let l), .unplugged(let l): return BatteryManager.color(for: l)
         case .shelfAdded: return .blue
+        case .focus: return .indigo
         }
     }
 }
@@ -164,6 +174,21 @@ struct MusicBars: View {
             .frame(width: 20)
         } else {
             EqualizerBars(color: color)
+        }
+    }
+}
+
+/// A moon in the header while a Focus is keeping the notch quiet.
+struct FocusBadge: View {
+    @ObservedObject var focus: FocusMonitor
+    @ObservedObject var settings: AppSettings
+
+    var body: some View {
+        if focus.isActive && settings.respectFocus {
+            Image(systemName: "moon.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(.indigo)
+                .help("เปิดโหมด \(focus.modeName ?? "Focus") อยู่ — แจ้งเตือนที่ไม่สำคัญจะเงียบ")
         }
     }
 }
@@ -225,6 +250,7 @@ struct NotchHeader: View {
             }
             Spacer(minLength: (state.notchSize.width + 16) / state.scale)
             HStack(spacing: 10) {
+                FocusBadge(focus: state.focus, settings: settings)
                 if battery.hasBattery {
                     HStack(spacing: 5) {
                         Text("\(battery.level)%")
@@ -235,29 +261,31 @@ struct NotchHeader: View {
                     .help(batteryHelp)
                 }
                 Menu {
-                    Picker("Size", selection: $settings.sizeScale) {
+                    Picker("ขนาด", selection: $settings.sizeScale) {
                         ForEach(AppSettings.sizeOptions, id: \.scale) { option in
                             Text(option.name).tag(option.scale)
                         }
                     }
-                    Menu("Show in notch") {
-                        Toggle("App notifications", isOn: $settings.appNotifications)
-                        Toggle("Song changes", isOn: $settings.songPeek)
-                        Toggle("Volume & brightness", isOn: $settings.volumeHUD)
-                        Toggle("Battery alerts", isOn: $settings.batteryAlerts)
-                        Toggle("Bluetooth devices", isOn: $settings.bluetoothAlerts)
-                        Toggle("Meetings", isOn: $settings.meetingAlerts)
+                    Menu("แสดงที่รอยบาก") {
+                        Toggle("แจ้งเตือนจากแอปอื่น", isOn: $settings.appNotifications)
+                        Toggle("ชื่อเพลงตอนเปลี่ยนเพลง", isOn: $settings.songPeek)
+                        Toggle("ระดับเสียงและความสว่าง", isOn: $settings.volumeHUD)
+                        Toggle("แจ้งเตือนแบตเตอรี่", isOn: $settings.batteryAlerts)
+                        Toggle("อุปกรณ์บลูทูธ", isOn: $settings.bluetoothAlerts)
+                        Toggle("การประชุม", isOn: $settings.meetingAlerts)
+                        Divider()
+                        Toggle("เงียบเมื่อเปิดโหมด Focus", isOn: $settings.respectFocus)
                     }
-                    Button("Permissions…") { state.showPermissions?() }
-                    Toggle("Live waveform (uses audio permission)", isOn: $settings.liveWaveform)
-                    Toggle("Clipboard history", isOn: $settings.clipboardHistory)
-                    Button("Weather city: \(state.weather.city)…") { state.weather.chooseCity() }
+                    Button("ตั้งค่าสิทธิ์…") { state.showPermissions?() }
+                    Toggle("คลื่นเสียงตามเพลงจริง (ใช้สิทธิ์เสียงระบบ)", isOn: $settings.liveWaveform)
+                    Toggle("เก็บประวัติคลิปบอร์ด", isOn: $settings.clipboardHistory)
+                    Button("เมืองสภาพอากาศ: \(state.weather.city)…") { state.weather.chooseCity() }
                     Divider()
-                    Toggle("Haptic feedback", isOn: $settings.haptics)
-                    Toggle("Launch at login", isOn: $settings.launchAtLogin)
+                    Toggle("สั่นที่แทร็กแพด", isOn: $settings.haptics)
+                    Toggle("เปิดตอนเข้าเครื่อง", isOn: $settings.launchAtLogin)
                     Divider()
-                    Text("Hotkeys: ⌃⌥I open notch · ⌃⌥T timer")
-                    Button("Quit P Island") { NSApp.terminate(nil) }
+                    Text("ปุ่มลัด: ⌃⌥I เปิดรอยบาก · ⌃⌥T ตัวจับเวลา")
+                    Button("ออกจาก P Island") { NSApp.terminate(nil) }
                 } label: {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 12))
