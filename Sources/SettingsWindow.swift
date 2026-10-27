@@ -71,11 +71,14 @@ final class SettingsWindowController: NSObject {
             let view = SettingsView(state: state, permissions: permissions, selection: selection, settings: state.settings)
             let w = NSWindow(contentViewController: NSHostingController(rootView: view))
             w.title = "การตั้งค่า \(AppInfo.name)"
-            w.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+            w.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
             w.titlebarAppearsTransparent = true
             w.isReleasedWhenClosed = false
+            w.contentMinSize = NSSize(width: 680, height: 460)
             w.setContentSize(NSSize(width: 780, height: 540))
             w.center()
+            // Comes back at the size and place it was last left.
+            w.setFrameAutosaveName("PIslandSettings")
             window = w
         }
         NSApp.activate(ignoringOtherApps: true)
@@ -124,7 +127,7 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .navigationTitle(selection.pane?.title ?? "")
         }
-        .frame(minWidth: 780, minHeight: 540)
+        .frame(minWidth: 680, maxWidth: .infinity, minHeight: 460, maxHeight: .infinity)
         .environment(\.locale, .thai)
     }
 
