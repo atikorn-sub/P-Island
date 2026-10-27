@@ -1,4 +1,5 @@
 import AppKit
+import CoreImage
 import SwiftUI
 
 enum PlayerCommand {
@@ -126,6 +127,8 @@ final class MusicManager: ObservableObject {
     @Published private(set) var duration: Double = 0
     @Published private(set) var artwork: NSImage?
     @Published private(set) var accent: Color = .white
+    /// The cover, tiny and heavily blurred: the colours behind the panel's ambient glow.
+    @Published private(set) var ambientImage: NSImage?
     @Published private(set) var needsPermission: MusicPlayer?
 
     /// Called with (title, artist) when a new song starts playing (not for the song found at launch).
@@ -298,6 +301,7 @@ final class MusicManager: ObservableObject {
                 isPlaying = false
                 duration = 0
                 artwork = nil
+                ambientImage = nil
                 accent = .white
                 artworkKey = nil
             }
@@ -325,6 +329,7 @@ final class MusicManager: ObservableObject {
                 guard let self, self.artworkKey == key else { return }
                 self.artwork = image
                 self.accent = image.flatMap(Self.accentColor).map { Color(nsColor: $0) } ?? .white
+                self.ambientImage = image.flatMap(Self.ambient)
             }
         }
         switch s.player {
@@ -339,6 +344,19 @@ final class MusicManager: ObservableObject {
                 finish(data.flatMap { NSImage(data: $0) })
             }.resume()
         }
+    }
+
+    /// Shrinks the cover to 48 px, blurs and saturates it once; the glow then only moves it around.
+    private static func ambient(_ image: NSImage) -> NSImage? {
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let small = CIImage(cgImage: cg)
+            .transformed(by: CGAffineTransform(scaleX: 48 / CGFloat(cg.width), y: 48 / CGFloat(cg.height)))
+        let blurred = small.clampedToExtent()
+            .applyingGaussianBlur(sigma: 6)
+            .applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 2.1, kCIInputBrightnessKey: 0.08, kCIInputContrastKey: 1.15])
+            .cropped(to: CGRect(x: 0, y: 0, width: 48, height: 48))
+        guard let out = CIContext().createCGImage(blurred, from: blurred.extent) else { return nil }
+        return NSImage(cgImage: out, size: NSSize(width: 48, height: 48))
     }
 
     /// Average artwork colour, brightened so it reads on black.

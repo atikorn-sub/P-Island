@@ -282,6 +282,9 @@ private struct MusicPane: View {
     var body: some View {
         Form {
             Section(tr("ตอนเล่นเพลง", "While music plays")) {
+                DescribedToggle(title: tr("แสงแอมเบียนต์จากปกเพลง", "Ambient light from the cover"),
+                                detail: tr("แผงสีดำมีแสงฟุ้งสีเดียวกับปกเพลงลอยอยู่ด้านหลัง", "A soft glow in the cover's colours drifts behind the black panel"),
+                                isOn: $settings.ambientGlow)
                 DescribedToggle(title: tr("พลิกปกเพลงตอนเปลี่ยนเพลง", "Flip the cover on song change"), detail: tr("ปกหมุนเปลี่ยนเป็นปกใหม่ครั้งเดียวต่อเพลง", "The cover turns over to the new one, once per song"),
                                 isOn: $settings.artworkFlip)
                 DescribedToggle(title: tr("คลื่นเสียงตามเพลงจริง", "Live waveform"),

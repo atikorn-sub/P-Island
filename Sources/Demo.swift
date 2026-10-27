@@ -52,6 +52,52 @@ enum Demo {
     }
 
     /// `--demo-alerts` (or the menu bar item): one of each new notch card, with sample data.
+    /// `--showcase`: a ~40 s tour for recording a preview video. Changes look and style along the way
+    /// and puts the user's own choices back at the end.
+    static func runShowcase(controller: NotchController, state: NotchState) {
+        let settings = state.settings
+        let saved = (settings.closedStyle, settings.notchStyle)
+        settings.closedStyle = "wings"
+        settings.notchStyle = "black"
+        var t = 1.5
+        func step(_ seconds: Double, _ name: String, _ action: @escaping () -> Void) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + t) {
+                NSLog("%@", "Islet showcase: \(name)")
+                action()
+            }
+            t += seconds
+        }
+        step(3, "wings") {}
+        step(3, "home") { controller.open(tab: .home, sticky: 120) }
+        step(2.2, "calendar") { state.tab = .calendar }
+        step(2.2, "shelf") { state.tab = .shelf }
+        step(2.2, "clipboard") { state.tab = .clipboard }
+        step(2.2, "timer") { state.tab = .timer }
+        step(1.5, "close") { controller.close(); state.tab = .home }
+        step(4, "slim bar") { settings.closedStyle = "mini" }
+        step(3.2, "song peek") {
+            settings.closedStyle = "wings"
+            state.showAlert(.nowPlaying(title: state.music.hasTrack ? state.music.title : "P Island",
+                                        artist: state.music.hasTrack ? state.music.artist : AppInfo.developer), seconds: 3)
+        }
+        step(3, "volume") { state.showAlert(.volume(level: state.controls.volume, muted: false), seconds: 2.8) }
+        step(3.6, "notification") {
+            state.showAlert(.notification(AppNotification(bundleID: MessagesReplier.bundleID, title: "P",
+                                                          subtitle: "", body: tr("มีแอปใหม่ในพอร์ตแล้ว 🎉", "New app in the portfolio 🎉"),
+                                                          date: Date()), replying: false), seconds: 3.4)
+        }
+        step(3.2, "battery") { state.showAlert(.batteryEstimate(level: state.battery.level, minutes: 245), seconds: 3) }
+        step(3.5, "glass") {
+            settings.notchStyle = "glass"
+            controller.open(tab: .home, sticky: 120)
+        }
+        step(1, "end") {
+            controller.close()
+            settings.closedStyle = saved.0
+            settings.notchStyle = saved.1
+        }
+    }
+
     static func runAlerts(state: NotchState) {
         let meetingURL = URL(string: "https://meet.google.com/")!
         let steps: [(String, NotchAlert, Double)] = [

@@ -171,6 +171,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if args.contains("--demo-alerts") {
             Demo.runAlerts(state: state)
         }
+        if args.contains("--showcase") {
+            Demo.runShowcase(controller: controller, state: state)
+        }
 
         // `--settings about` opens the settings window on that pane.
         if let i = args.firstIndex(of: "--settings") {

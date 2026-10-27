@@ -41,6 +41,12 @@ struct NotchRootView: View {
             }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
+        .background {
+            // Ambient light from the cover, on the black look only (glass already shows what's behind).
+            if open && settings.notchStyle != "glass" && settings.ambientGlow && music.hasTrack {
+                AmbientGlow(music: music)
+            }
+        }
         .background(NotchBackground(shape: shape,
                                     glass: settings.notchStyle == "glass" && (open || alerting),
                                     notchSize: state.notchSize, hasNotch: state.hasNotch,

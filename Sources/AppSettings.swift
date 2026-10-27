@@ -45,6 +45,10 @@ final class AppSettings: ObservableObject {
     @Published var glassTint: Double {
         didSet { defaults.set(glassTint, forKey: "glassTint") }
     }
+    /// Soft light in the cover's colours behind the open panel (black look).
+    @Published var ambientGlow: Bool {
+        didSet { defaults.set(ambientGlow, forKey: "ambientGlow") }
+    }
     /// Album art flips over when the song changes (read by ArtworkView straight from UserDefaults).
     @Published var artworkFlip: Bool {
         didSet { defaults.set(artworkFlip, forKey: "artworkFlip") }
@@ -88,10 +92,11 @@ final class AppSettings: ObservableObject {
             "haptics": true, "batteryAlerts": true, "sizeScale": 1.0, "songPeek": true, "volumeHUD": true,
             "bluetoothAlerts": true, "meetingAlerts": true, "clipboardHistory": true,
             "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true, "respectFocus": true,
-            "artworkFlip": true, "notchStyle": "black", "glassTint": 0.25, "closedStyle": "wings",
+            "artworkFlip": true, "notchStyle": "black", "glassTint": 0.25, "closedStyle": "wings", "ambientGlow": true,
         ])
         notchStyle = defaults.string(forKey: "notchStyle") ?? "black"
         closedStyle = defaults.string(forKey: "closedStyle") ?? "wings"
+        ambientGlow = defaults.bool(forKey: "ambientGlow")
         glassTint = defaults.double(forKey: "glassTint")
         artworkFlip = defaults.bool(forKey: "artworkFlip")
         respectFocus = defaults.bool(forKey: "respectFocus")
