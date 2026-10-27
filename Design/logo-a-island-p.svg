@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2DD4BF"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="eq" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#FB923C"/>
+      <stop offset="1" stop-color="#F43F5E"/>
+    </linearGradient>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)" filter="url(#shadow)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="14">
+    <path d="M300 812 q 53 -28 106 0 t 106 0 t 106 0 t 106 0" stroke-opacity="0.45"/>
+    <path d="M375 862 q 46 -24 92 0 t 92 0 t 92 0" stroke-opacity="0.25"/>
+  </g>
+  <path d="M297 322 Q 297 262 357 262 H 597 A 130 130 0 0 1 597 522 H 437 V 662 A 70 70 0 0 1 297 662 Z"
+        fill="#0B0B10" filter="url(#shadow)"/>
+  <g fill="url(#eq)">
+    <rect x="495" y="347" width="30" height="90" rx="15"/>
+    <rect x="543" y="317" width="30" height="150" rx="15"/>
+    <rect x="591" y="337" width="30" height="110" rx="15"/>
+    <rect x="639" y="307" width="30" height="170" rx="15"/>
+  </g>
+</svg>

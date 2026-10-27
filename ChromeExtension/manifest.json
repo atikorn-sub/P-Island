@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "P Island for YouTube Music",
+  "version": "1.2",
+  "description": "Shows what's playing on YouTube Music in the P Island notch app and lets the notch control playback.",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://music.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

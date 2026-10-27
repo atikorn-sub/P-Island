@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>P Island</string>
+	<key>CFBundleExecutable</key>
+	<string>PIsland</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.atikorn.islet</string>
+	<key>CFBundleName</key>
+	<string>P Island</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>P Island reads the current song from Music and Spotify and controls playback from the notch.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>P Island shows when your AirPods and other Bluetooth devices connect, with their battery levels.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>P Island shows today's upcoming events in the notch.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
+</plist>
