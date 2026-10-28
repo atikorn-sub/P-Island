@@ -157,6 +157,7 @@ final class CalendarManager: ObservableObject {
                 default: return a.title.localizedCompare(b.title) == .orderedAscending
                 }
             }
+            NSLog("%@", "Islet reminders: \(found?.count ?? 0) unfinished, \(items.count) for \(isToday ? "today" : "the selected day")")
             DispatchQueue.main.async {
                 guard let self, cal.isDate(self.selectedDay, inSameDayAs: day) else { return }
                 if self.reminders != items { self.reminders = items }
