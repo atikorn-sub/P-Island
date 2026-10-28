@@ -2,3 +2,4 @@ build/
 build.noindex/
 dist/
 .DS_Store
+docs/media/*.mov
