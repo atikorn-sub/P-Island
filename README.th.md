@@ -37,14 +37,13 @@
 | 🔋 **ระบบ** | แบตเป็นสีเขียว/ส้ม/แดง เตือนแบตน้อยและชาร์จเต็ม บอกเวลาที่ใช้ได้ แถบปรับเสียงและความสว่างที่รอยบาก แจ้งตอน AirPods เชื่อมต่อพร้อม % แบตแต่ละข้าง |
 | 🎨 **ปรับแต่งได้** | หน้าตาแบบดำหรือกระจก (บน macOS 26 เป็น Liquid Glass ของจริง) มี 4 ขนาด เลือกไทยหรืออังกฤษได้ ปุ่มลัด <kbd>⌃⌥I</kbd> และ <kbd>⌃⌥T</kbd> และปัดสลับแถบได้ และบอกเมื่อมีเวอร์ชันใหม่ |
 
-<!--
-ภาพหน้าจอ: ใส่ไฟล์ PNG ไว้ใน docs/screenshots/ แล้วเอาเครื่องหมายคอมเมนต์ของส่วนนี้ออก
-
 <p align="center">
-  <img src="docs/screenshots/home.png" width="49%"> <img src="docs/screenshots/slim-bar.png" width="49%">
-  <img src="docs/screenshots/notification.png" width="49%"> <img src="docs/screenshots/settings.png" width="49%">
+  <img src="docs/media/P-Island-preview.gif" width="100%" alt="P Island ขณะใช้งาน">
 </p>
--->
+<p align="center">
+  <img src="docs/screenshots/lyrics.png" width="49%"> <img src="docs/screenshots/drop-zones.png" width="49%">
+  <img src="docs/screenshots/pomodoro.png" width="49%"> <img src="docs/screenshots/glass.png" width="49%">
+</p>
 
 ---
 

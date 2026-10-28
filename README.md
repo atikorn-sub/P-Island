@@ -37,14 +37,13 @@ Move the pointer to the notch and it opens into a small panel. While it's closed
 | 🔋 **System** | Battery level in green / orange / red, low-battery and fully-charged alerts, time left on battery. Volume and brightness sliders in the notch. AirPods connecting, with battery per bud. |
 | 🎨 **Make it yours** | Black or glass look (real Liquid Glass on macOS 26), four sizes, Thai or English, shortcuts <kbd>⌃⌥I</kbd> and <kbd>⌃⌥T</kbd>, swipe between tabs. Tells you when a new version is out. |
 
-<!--
-Screenshots: put PNGs in docs/screenshots/ and uncomment this block.
-
 <p align="center">
-  <img src="docs/screenshots/home.png" width="49%"> <img src="docs/screenshots/slim-bar.png" width="49%">
-  <img src="docs/screenshots/notification.png" width="49%"> <img src="docs/screenshots/settings.png" width="49%">
+  <img src="docs/media/P-Island-preview.gif" width="100%" alt="P Island in action">
 </p>
--->
+<p align="center">
+  <img src="docs/screenshots/lyrics.png" width="49%"> <img src="docs/screenshots/drop-zones.png" width="49%">
+  <img src="docs/screenshots/pomodoro.png" width="49%"> <img src="docs/screenshots/glass.png" width="49%">
+</p>
 
 ---
 

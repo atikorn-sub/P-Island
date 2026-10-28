@@ -3,3 +3,4 @@ build.noindex/
 dist/
 .DS_Store
 docs/media/*.mov
+docs/media/*.mp4
