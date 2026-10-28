@@ -25,8 +25,7 @@ enum Demo {
             state.shelf.convert(png, to: .jpeg)
         }
         step(4, "Timer — 15 second countdown") {
-            state.timer.setDuration(15)
-            state.timer.start()
+            state.timer.startCountdown(seconds: 15, name: "Demo")
             controller.open(tab: .timer, sticky: 4)
         }
         step(5, "Closed notch — timer on the wings") {

@@ -97,7 +97,7 @@ struct ClosedNotchView: View {
             ArtworkView(image: music.artwork, trackID: music.trackID, size: h(0.62), radius: 6)
                 .onTapGesture { music.openPlayer() }
         case .timer:
-            Image(systemName: "timer").font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
+            timerBadge
         case .transient(.charging(let level)):
             BatteryGauge(level: level, charging: true, width: 24)
         case .transient(.unplugged(let level)):
@@ -116,9 +116,9 @@ struct ClosedNotchView: View {
         case .music:
             MusicBars(levels: state.audioLevels, color: music.accent).frame(height: h(0.42))
         case .timer, .musicAndTimer:
-            Text(TimerManager.format(timer.remaining))
+            Text(timerText)
                 .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
-                .foregroundStyle(.orange)
+                .foregroundStyle(timerColor)
                 .minimumScaleFactor(0.6)
         case .transient(let t):
             Text(t.text)
@@ -128,6 +128,31 @@ struct ClosedNotchView: View {
     }
 
     private func h(_ fraction: CGFloat) -> CGFloat { state.notchSize.height * fraction }
+
+    /// A ring emptying as the countdown runs (red for Pomodoro focus, green for its breaks), or a stopwatch.
+    @ViewBuilder private var timerBadge: some View {
+        switch timer.primary {
+        case .countdown(let c, _):
+            TimeRing(progress: c.progress(), color: timerColor, lineWidth: 2.5)
+                .frame(width: h(0.5), height: h(0.5))
+        default:
+            Image(systemName: "stopwatch").font(.system(size: 13, weight: .semibold)).foregroundStyle(timerColor)
+        }
+    }
+
+    private var timerText: String {
+        if case .stopwatch = timer.primary { return TimerManager.format(timer.stopwatchElapsed().rounded(.down)) }
+        return TimerManager.format(timer.remaining)
+    }
+
+    private var timerColor: Color {
+        switch timer.primary {
+        case .countdown(_, .focus?): return .red
+        case .countdown(_, .shortBreak?), .countdown(_, .longBreak?): return .green
+        case .stopwatch: return .cyan
+        default: return .orange
+        }
+    }
 }
 
 private extension TransientActivity {

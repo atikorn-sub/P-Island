@@ -84,8 +84,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let state, !state.isOpen else { return }
             state.flash(.shelfAdded(count), seconds: 2)
         }
-        state.timer.onFinish = { [weak controller] in
-            controller?.open(tab: .timer, sticky: 6)
+        state.timer.onFinish = { [weak state] title, detail in
+            state?.showAlert(.info(symbol: "timer", title: title, subtitle: detail), seconds: 8)
         }
         state.music.onTrackChange = { [weak state] title, artist in
             guard let state, state.settings.songPeek, !state.isOpen, !state.isQuiet else { return }
