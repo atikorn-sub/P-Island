@@ -266,6 +266,19 @@ private struct AlertsPane: View {
                 DescribedToggle(title: tr("การประชุม", "Meetings"), detail: tr("ปุ่มเข้าร่วม Zoom, Meet, Teams ก่อนเริ่มประมาณ 1 นาที", "A Join button for Zoom, Meet or Teams about a minute before"),
                                 isOn: $settings.meetingAlerts)
             }
+            Section {
+                DescribedToggle(title: tr("ดาวน์โหลด", "Downloads"),
+                                detail: tr("ความคืบหน้าบนรอยบากตอนโหลดไฟล์จาก Safari, Chrome หรือ Firefox และบอกเมื่อเสร็จ", "Progress on the notch while Safari, Chrome or Firefox downloads, and a card when it's done"),
+                                isOn: $settings.liveDownloads)
+                DescribedToggle(title: tr("กล้องและไมค์", "Camera & microphone"),
+                                detail: tr("บอกเมื่อมีแอปเริ่มหรือเลิกใช้กล้องหรือไมค์", "Shows when an app starts or stops using the camera or microphone"),
+                                isOn: $settings.liveCameraMic)
+                DescribedToggle(title: "Caps Lock",
+                                detail: tr("บอกตอนเปิดหรือปิด Caps Lock", "Shows Caps Lock turning on or off"),
+                                isOn: $settings.liveCapsLock)
+            } header: {
+                Text("Live Activity")
+            }
             Section(tr("โหมด Focus", "Focus")) {
                 DescribedToggle(title: tr("เงียบเมื่อเปิดโหมด Focus", "Stay quiet during Focus"),
                                 detail: tr("พักแจ้งเตือนจากแอปอื่น ชื่อเพลง และบลูทูธ แต่ยังเตือนแบตใกล้หมด ตัวจับเวลา และประชุม", "Holds back app notifications, song changes and Bluetooth; low battery, timers and meetings still show"),

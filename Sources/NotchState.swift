@@ -34,6 +34,9 @@ enum TransientActivity: Equatable {
     case unplugged(Int)
     case shelfAdded(Int)
     case focus(on: Bool)
+    case capsLock(on: Bool)
+    case camera(on: Bool)
+    case microphone(on: Bool)
 }
 
 enum BluetoothKind: Equatable {
@@ -109,6 +112,7 @@ enum ClosedActivity: Equatable {
     case musicAndTimer
     case miniPlayer
     case transient(TransientActivity)
+    case download
     case alert(NotchAlert)
 }
 
@@ -133,6 +137,7 @@ final class NotchState: ObservableObject {
     let audioLevels = AudioLevelMonitor()
     let focus = FocusMonitor()
     let updates = UpdateChecker()
+    let downloads = DownloadMonitor()
 
     /// A Focus is on and the user wants P Island to stay quiet during it.
     var isQuiet: Bool { settings.respectFocus && focus.isActive }
@@ -186,6 +191,7 @@ final class NotchState: ObservableObject {
     var closedActivity: ClosedActivity {
         if let alert { return .alert(alert) }
         if let transient { return .transient(transient) }
+        if downloads.primary != nil { return .download }
         // Slim bar: stays out a little while after pausing so play is still one click away.
         if settings.closedStyle == "mini", music.hasTrack, music.isPlaying || music.recentlyPaused {
             return .miniPlayer

@@ -7,6 +7,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: NotchController!
     private var bluetooth: BluetoothManager!
     private var waveformObserver: AnyCancellable?
+    private var capsLock: CapsLockMonitor!
+    private var privacy: PrivacyMonitor!
+    private var downloadsObserver: AnyCancellable?
     private var languageObserver: AnyCancellable?
     private var settingsWindow: SettingsWindowController!
     private var statusItem: NSStatusItem!
@@ -122,6 +125,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let state, state.settings.respectFocus, !state.isOpen else { return }
             state.flash(.focus(on: on), seconds: 2.5)
         }
+        // Live activities: Caps Lock, camera and microphone in use, downloads.
+        capsLock = CapsLockMonitor()
+        capsLock.onChange = { [weak state] on in
+            guard let state, state.settings.liveCapsLock, !state.isOpen else { return }
+            state.flash(.capsLock(on: on), seconds: 1.6)
+        }
+        privacy = PrivacyMonitor()
+        privacy.ignoreCamera = { [weak state] in state?.isOpen == true && state?.tab == .mirror }
+        privacy.onChange = { [weak state] device, on in
+            guard let state, state.settings.liveCameraMic, !state.isOpen else { return }
+            state.flash(device == .camera ? .camera(on: on) : .microphone(on: on), seconds: 2.5)
+        }
+        state.downloads.onFinished = { [weak state] url in
+            guard let state, !state.isOpen else { return }
+            state.showAlert(.info(symbol: "arrow.down.circle.fill", title: tr("ดาวน์โหลดเสร็จแล้ว", "Download finished"),
+                                  subtitle: url.lastPathComponent), seconds: 4)
+        }
+        downloadsObserver = settings.$liveDownloads.sink { [weak state] on in
+            if on { state?.downloads.start() } else { state?.downloads.stop() }
+        }
+
         if CommandLine.arguments.contains("--debug-focus") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { state.focus.dumpForDebugging() }
         }

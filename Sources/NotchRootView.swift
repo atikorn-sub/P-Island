@@ -10,12 +10,14 @@ struct NotchRootView: View {
     @ObservedObject private var music: MusicManager
     @ObservedObject private var timer: TimerManager
     @ObservedObject private var settings: AppSettings
+    @ObservedObject private var downloads: DownloadMonitor
 
     init(state: NotchState) {
         self.state = state
         music = state.music
         timer = state.timer
         settings = state.settings
+        downloads = state.downloads
     }
 
     var body: some View {
@@ -72,11 +74,13 @@ struct ClosedNotchView: View {
     @ObservedObject var state: NotchState
     @ObservedObject private var music: MusicManager
     @ObservedObject private var timer: TimerManager
+    @ObservedObject private var downloads: DownloadMonitor
 
     init(state: NotchState) {
         self.state = state
         music = state.music
         timer = state.timer
+        downloads = state.downloads
     }
 
     var body: some View {
@@ -106,6 +110,17 @@ struct ClosedNotchView: View {
             Image(systemName: "tray.and.arrow.down.fill").font(.system(size: 14, weight: .semibold)).foregroundStyle(.blue)
         case .transient(.focus(let on)):
             Image(systemName: on ? "moon.fill" : "moon").font(.system(size: 14, weight: .semibold)).foregroundStyle(.indigo)
+        case .transient(.capsLock(let on)):
+            Image(systemName: on ? "capslock.fill" : "capslock").font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(on ? Color.green : Color.white.opacity(0.6))
+        case .transient(.camera(let on)):
+            Image(systemName: on ? "video.fill" : "video.slash.fill").font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(on ? Color.green : Color.white.opacity(0.6))
+        case .transient(.microphone(let on)):
+            Image(systemName: on ? "mic.fill" : "mic.slash.fill").font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(on ? Color.orange : Color.white.opacity(0.6))
+        case .download:
+            downloadBadge
         }
     }
 
@@ -120,6 +135,11 @@ struct ClosedNotchView: View {
                 .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
                 .foregroundStyle(timerColor)
                 .minimumScaleFactor(0.6)
+        case .download:
+            Text(downloadText)
+                .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
+                .foregroundStyle(.blue)
+                .minimumScaleFactor(0.6)
         case .transient(let t):
             Text(t.text)
                 .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
@@ -128,6 +148,32 @@ struct ClosedNotchView: View {
     }
 
     private func h(_ fraction: CGFloat) -> CGFloat { state.notchSize.height * fraction }
+
+    /// A ring filling as the download goes (Safari says how big it is), or a bobbing arrow when the size isn't known.
+    @ViewBuilder private var downloadBadge: some View {
+        if let fraction = downloads.primary?.fraction {
+            ZStack {
+                TimeRing(progress: fraction, color: .blue, lineWidth: 2.5)
+                Image(systemName: "arrow.down").font(.system(size: 7, weight: .black)).foregroundStyle(.blue)
+            }
+            .frame(width: h(0.5), height: h(0.5))
+        } else {
+            TimelineView(.animation(minimumInterval: 1.0 / 20)) { ctx in
+                let t = ctx.date.timeIntervalSinceReferenceDate
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.blue)
+                    .offset(y: sin(t * 5) * 1.5)
+            }
+        }
+    }
+
+    /// "45%" when the size is known, otherwise how much has come down, e.g. "12.4 MB".
+    private var downloadText: String {
+        guard let d = downloads.primary else { return "" }
+        if let f = d.fraction { return "\(Int(f * 100))%" }
+        return ByteCountFormatter.string(fromByteCount: d.bytes, countStyle: .file)
+    }
 
     /// A ring emptying as the countdown runs (red for Pomodoro focus, green for its breaks), or a stopwatch.
     @ViewBuilder private var timerBadge: some View {
@@ -160,7 +206,7 @@ private extension TransientActivity {
         switch self {
         case .charging(let l), .unplugged(let l): return "\(l)%"
         case .shelfAdded(let n): return "+\(n)"
-        case .focus(let on): return on ? tr("เปิด", "On") : tr("ปิด", "Off")
+        case .focus(let on), .capsLock(let on), .camera(let on), .microphone(let on): return on ? tr("เปิด", "On") : tr("ปิด", "Off")
         }
     }
 
@@ -169,6 +215,8 @@ private extension TransientActivity {
         case .charging(let l), .unplugged(let l): return BatteryManager.color(for: l)
         case .shelfAdded: return .blue
         case .focus: return .indigo
+        case .capsLock(let on), .camera(let on): return on ? .green : .white.opacity(0.6)
+        case .microphone(let on): return on ? .orange : .white.opacity(0.6)
         }
     }
 }

@@ -51,6 +51,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>P Island watches your Downloads folder to show download progress in the notch. It only looks at file names and sizes.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>P Island shows your front camera as a mirror in the notch when you open the Mirror tab. Nothing is recorded.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>

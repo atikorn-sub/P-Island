@@ -61,6 +61,16 @@ final class AppSettings: ObservableObject {
     @Published var checkUpdates: Bool {
         didSet { defaults.set(checkUpdates, forKey: "checkUpdates") }
     }
+    /// Live activities on the closed notch.
+    @Published var liveDownloads: Bool {
+        didSet { defaults.set(liveDownloads, forKey: "liveDownloads") }
+    }
+    @Published var liveCameraMic: Bool {
+        didSet { defaults.set(liveCameraMic, forKey: "liveCameraMic") }
+    }
+    @Published var liveCapsLock: Bool {
+        didSet { defaults.set(liveCapsLock, forKey: "liveCapsLock") }
+    }
     /// Album art flips over when the song changes (read by ArtworkView straight from UserDefaults).
     @Published var artworkFlip: Bool {
         didSet { defaults.set(artworkFlip, forKey: "artworkFlip") }
@@ -106,6 +116,7 @@ final class AppSettings: ObservableObject {
             "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true, "respectFocus": true,
             "artworkFlip": true, "notchStyle": "black", "glassTint": 0.25, "closedStyle": "wings", "ambientGlow": true,
             "lyrics": true, "lyricsInSlimBar": true, "checkUpdates": true,
+            "liveDownloads": true, "liveCameraMic": true, "liveCapsLock": true,
         ])
         notchStyle = defaults.string(forKey: "notchStyle") ?? "black"
         closedStyle = defaults.string(forKey: "closedStyle") ?? "wings"
@@ -113,6 +124,9 @@ final class AppSettings: ObservableObject {
         lyrics = defaults.bool(forKey: "lyrics")
         lyricsInSlimBar = defaults.bool(forKey: "lyricsInSlimBar")
         checkUpdates = defaults.bool(forKey: "checkUpdates")
+        liveDownloads = defaults.bool(forKey: "liveDownloads")
+        liveCameraMic = defaults.bool(forKey: "liveCameraMic")
+        liveCapsLock = defaults.bool(forKey: "liveCapsLock")
         glassTint = defaults.double(forKey: "glassTint")
         artworkFlip = defaults.bool(forKey: "artworkFlip")
         respectFocus = defaults.bool(forKey: "respectFocus")
