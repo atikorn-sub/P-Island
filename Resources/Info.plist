@@ -35,6 +35,8 @@
 	<string>P Island listens to what your Mac is playing so the notch waveform moves with the music. Nothing is recorded or saved.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>P Island shows when AirPods and other Bluetooth devices connect, with their battery levels.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>P Island shows your front camera as a mirror in the notch when you open the Mirror tab. Nothing is recorded.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>P Island shows your events in the notch and reminds you before meetings.</string>
 	<key>NSHighResolutionCapable</key>

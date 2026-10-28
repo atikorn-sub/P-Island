@@ -2,8 +2,19 @@ import AppKit
 import AudioToolbox
 import CoreAudio
 
-/// Output volume (CoreAudio) and built-in display brightness, with change callbacks for the notch HUD.
+/// A speaker, headphones or screen the Mac can play sound through.
+struct AudioOutput: Identifiable, Equatable {
+    let id: AudioObjectID
+    let name: String
+    let symbol: String
+}
+
+/// Output volume and device (CoreAudio) and built-in display brightness, with change callbacks for the notch HUD.
 final class SystemControls: ObservableObject {
+    /// Every output that can play sound, built-in first.
+    @Published private(set) var outputs: [AudioOutput] = []
+    /// The output sound plays through now.
+    @Published private(set) var currentOutput = AudioObjectID(kAudioObjectUnknown)
     @Published private(set) var volume: Float = 0
     @Published private(set) var muted = false
     /// nil when no built-in display reports brightness (e.g. lid closed).
@@ -30,6 +41,13 @@ final class SystemControls: ObservableObject {
                                                  mElement: kAudioObjectPropertyElementMain)
         AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &address, .main) { [weak self] _, _ in
             self?.attachDefaultOutput()
+        }
+        loadOutputs()
+        var devices = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDevices,
+                                                 mScope: kAudioObjectPropertyScopeGlobal,
+                                                 mElement: kAudioObjectPropertyElementMain)
+        AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &devices, .main) { [weak self] _, _ in
+            self?.loadOutputs()
         }
         brightness = readBrightness()
         // Brightness has no change notification, so poll gently.
@@ -71,6 +89,7 @@ final class SystemControls: ObservableObject {
                                                  mElement: kAudioObjectPropertyElementMain)
         guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &id) == noErr else { return }
         device = id
+        if currentOutput != id { currentOutput = id }
         readVolume(notify: false)
         guard !listenedDevices.contains(id) else { return }
         listenedDevices.insert(id)
@@ -95,6 +114,89 @@ final class SystemControls: ObservableObject {
         if hasVolume { volume = v }
         muted = m != 0
         if notify && changed { onVolumeChange?() }
+    }
+
+    // MARK: Output device
+
+    /// Sends all sound, alerts included, to `output`.
+    func setOutput(_ output: AudioOutput) {
+        var id = output.id
+        let size = UInt32(MemoryLayout<AudioObjectID>.size)
+        for selector in [kAudioHardwarePropertyDefaultOutputDevice, kAudioHardwarePropertyDefaultSystemOutputDevice] {
+            var address = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal,
+                                                     mElement: kAudioObjectPropertyElementMain)
+            AudioObjectSetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, size, &id)
+        }
+    }
+
+    private func loadOutputs() {
+        var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDevices,
+                                                 mScope: kAudioObjectPropertyScopeGlobal,
+                                                 mElement: kAudioObjectPropertyElementMain)
+        var size: UInt32 = 0
+        let system = AudioObjectID(kAudioObjectSystemObject)
+        guard AudioObjectGetPropertyDataSize(system, &address, 0, nil, &size) == noErr else { return }
+        var ids = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
+        guard AudioObjectGetPropertyData(system, &address, 0, nil, &size, &ids) == noErr else { return }
+
+        let found: [(AudioOutput, UInt32)] = ids.compactMap { id in
+            guard Self.hasOutputStreams(id), !Self.flag(id, kAudioDevicePropertyIsHidden) else { return nil }
+            let transport = Self.uint(id, kAudioDevicePropertyTransportType)
+            // Aggregates are plumbing (e.g. the waveform's own tap), not something to pick.
+            guard transport != kAudioDeviceTransportTypeAggregate, let name = Self.name(id) else { return nil }
+            return (AudioOutput(id: id, name: name, symbol: Self.symbol(transport: transport, name: name)), transport)
+        }
+        let sorted = found.sorted { a, b in
+            let builtInA = a.1 == kAudioDeviceTransportTypeBuiltIn, builtInB = b.1 == kAudioDeviceTransportTypeBuiltIn
+            return builtInA != builtInB ? builtInA : a.0.name.localizedCompare(b.0.name) == .orderedAscending
+        }.map(\.0)
+        if outputs != sorted { outputs = sorted }
+    }
+
+    private static func symbol(transport: UInt32, name: String) -> String {
+        switch transport {
+        case kAudioDeviceTransportTypeBuiltIn: return "laptopcomputer"
+        case kAudioDeviceTransportTypeBluetooth, kAudioDeviceTransportTypeBluetoothLE:
+            let n = name.lowercased()
+            if n.contains("airpods max") { return "airpodsmax" }
+            if n.contains("airpods pro") { return "airpodspro" }
+            if n.contains("airpods") { return "airpods" }
+            return "headphones"
+        case kAudioDeviceTransportTypeHDMI, kAudioDeviceTransportTypeDisplayPort: return "tv"
+        case kAudioDeviceTransportTypeAirPlay: return "airplayaudio"
+        default: return "hifispeaker"
+        }
+    }
+
+    private static func hasOutputStreams(_ id: AudioObjectID) -> Bool {
+        var address = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyStreams,
+                                                 mScope: kAudioDevicePropertyScopeOutput,
+                                                 mElement: kAudioObjectPropertyElementMain)
+        var size: UInt32 = 0
+        return AudioObjectGetPropertyDataSize(id, &address, 0, nil, &size) == noErr && size > 0
+    }
+
+    private static func uint(_ id: AudioObjectID, _ selector: AudioObjectPropertySelector) -> UInt32 {
+        var address = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal,
+                                                 mElement: kAudioObjectPropertyElementMain)
+        var value: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        _ = AudioObjectGetPropertyData(id, &address, 0, nil, &size, &value)
+        return value
+    }
+
+    private static func flag(_ id: AudioObjectID, _ selector: AudioObjectPropertySelector) -> Bool {
+        uint(id, selector) != 0
+    }
+
+    private static func name(_ id: AudioObjectID) -> String? {
+        var address = AudioObjectPropertyAddress(mSelector: kAudioObjectPropertyName, mScope: kAudioObjectPropertyScopeGlobal,
+                                                 mElement: kAudioObjectPropertyElementMain)
+        var name: Unmanaged<CFString>?
+        var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        guard AudioObjectGetPropertyData(id, &address, 0, nil, &size, &name) == noErr,
+              let value = name?.takeRetainedValue() as String?, !value.isEmpty else { return nil }
+        return value
     }
 
     // MARK: Brightness

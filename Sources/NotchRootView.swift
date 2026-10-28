@@ -223,11 +223,12 @@ struct OpenNotchView: View {
                 .frame(height: max(state.notchSize.height, 30) / scale)
             Group {
                 switch state.tab {
-                case .home: HomeView(music: state.music, calendar: state.calendar)
+                case .home: HomeView(music: state.music, calendar: state.calendar, controls: state.controls)
                 case .calendar: CalendarTabView(calendar: state.calendar, weather: state.weather)
                 case .shelf: ShelfView(shelf: state.shelf)
                 case .clipboard: ClipboardView(clipboard: state.clipboard)
                 case .timer: TimerView(timer: state.timer)
+                case .mirror: MirrorView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

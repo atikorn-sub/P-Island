@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum NotchTab: String, CaseIterable, Identifiable {
-    case home, calendar, shelf, clipboard, timer
+    case home, calendar, shelf, clipboard, timer, mirror
 
     var id: String { rawValue }
 
@@ -12,6 +12,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .shelf: return "tray.full.fill"
         case .clipboard: return "doc.on.clipboard"
         case .timer: return "timer"
+        case .mirror: return "web.camera.fill"
         }
     }
 
@@ -22,6 +23,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .shelf: return tr("ชั้นวางไฟล์", "Shelf")
         case .clipboard: return tr("คลิปบอร์ด", "Clipboard")
         case .timer: return tr("ตัวจับเวลา", "Timer")
+        case .mirror: return tr("กระจก (กล้องหน้า)", "Mirror (camera)")
         }
     }
 }

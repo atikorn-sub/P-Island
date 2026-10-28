@@ -4,3 +4,4 @@
 "NSBluetoothAlwaysUsageDescription" = "P Island ใช้แจ้งเตือนเมื่อ AirPods และอุปกรณ์บลูทูธเชื่อมต่อ พร้อมบอก % แบตเตอรี่";
 "NSSpeechRecognitionUsageDescription" = "P Island ใช้ถอดเสียงจากไฟล์เสียงหรือวิดีโอเป็นข้อความ เมื่อคุณสั่งเท่านั้น";
 "NSAudioCaptureUsageDescription" = "P Island ฟังเสียงที่เครื่องกำลังเล่น เพื่อให้คลื่นเสียงที่รอยบากขยับตามเพลง ไม่มีการอัดหรือบันทึกเสียงใด ๆ";
+"NSCameraUsageDescription" = "P Island ใช้กล้องหน้าเป็นกระจกส่องหน้าที่รอยบาก เฉพาะตอนเปิดแท็บกระจก ไม่มีการอัดหรือบันทึกภาพ";

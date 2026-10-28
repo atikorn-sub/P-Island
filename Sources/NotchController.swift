@@ -43,6 +43,12 @@ final class NotchController {
     private var miniObserver: AnyCancellable?
     private var swipeDistance: CGFloat = 0
     private var swipeUsed = false
+    /// Sideways swipe on the closed notch: skips songs.
+    private var songSwipe: CGFloat = 0
+    private var songSwipeUsed = false
+    /// After a song swipe the notch stays closed until the pointer leaves it.
+    private var holdClosedUntilLeave = false
+    private var openedAt = Date.distantPast
 
     /// The open panel plus room for its shadow.
     private var windowSize: CGSize {
@@ -141,6 +147,7 @@ final class NotchController {
         guard !state.isOpen else { return }
         panel.ignoresMouseEvents = false
         state.isOpen = true
+        openedAt = Date()
         if state.settings.haptics {
             NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
         }
@@ -187,11 +194,55 @@ final class NotchController {
         if let scroll = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel, handler: { [weak self] in self?.handleScroll($0); return $0 }) {
             monitors.append(scroll)
         }
+        // While closed the panel lets the pointer through, so its scrolls arrive as other apps' events.
+        if let scroll = NSEvent.addGlobalMonitorForEvents(matching: .scrollWheel, handler: { [weak self] in self?.handleScroll($0) }) {
+            monitors.append(scroll)
+        }
+    }
+
+    /// A sideways two-finger swipe on the closed notch while music plays: left for the next song,
+    /// right for the previous one, like flicking through covers.
+    private func handleSongSwipe(_ event: NSEvent) {
+        guard event.hasPreciseScrollingDeltas, event.momentumPhase.isEmpty, state.music.hasTrack,
+              hoverRect.insetBy(dx: -6, dy: -4).contains(NSEvent.mouseLocation) else { return }
+        switch event.phase {
+        case .began:
+            songSwipe = 0
+            songSwipeUsed = false
+        case .ended, .cancelled:
+            return
+        default:
+            break
+        }
+        // Swiping here means "skip", not "open": keep the hover from opening the panel.
+        openWork?.cancel()
+        openWork = nil
+        holdClosedUntilLeave = true
+        guard !songSwipeUsed, abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) * 1.5 else { return }
+        songSwipe += event.scrollingDeltaX
+        guard abs(songSwipe) > 40 else { return }
+        songSwipeUsed = true
+        if songSwipe < 0 { state.music.next() } else { state.music.previous() }
+        if state.settings.haptics {
+            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+        }
     }
 
     /// A sideways two-finger swipe on the open panel moves to the next / previous tab.
     private func handleScroll(_ event: NSEvent) {
-        guard state.isOpen, event.hasPreciseScrollingDeltas else { return }
+        if !state.isOpen {
+            handleSongSwipe(event)
+            return
+        }
+        // The hover opened the panel a moment before the fingers started swiping on the notch:
+        // that was meant for the songs, so fold the panel back and let the swipe skip.
+        if event.phase == .began, state.music.hasTrack, Date().timeIntervalSince(openedAt) < 0.8,
+           hoverRect.contains(NSEvent.mouseLocation), abs(event.scrollingDeltaX) >= abs(event.scrollingDeltaY) {
+            close()
+            handleSongSwipe(event)
+            return
+        }
+        guard event.hasPreciseScrollingDeltas else { return }
         switch event.phase {
         case .began:
             swipeDistance = 0
@@ -277,8 +328,10 @@ final class NotchController {
         guard inside else {
             openWork?.cancel()
             openWork = nil
+            holdClosedUntilLeave = false
             return
         }
+        guard !holdClosedUntilLeave else { return }
         guard openWork == nil else { return }
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }

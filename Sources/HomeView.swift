@@ -4,16 +4,18 @@ struct HomeView: View {
     @ObservedObject var music: MusicManager
     @ObservedObject var calendar: CalendarManager
     @ObservedObject private var lyrics: LyricsManager
+    let controls: SystemControls
 
-    init(music: MusicManager, calendar: CalendarManager) {
+    init(music: MusicManager, calendar: CalendarManager, controls: SystemControls) {
         self.music = music
         self.calendar = calendar
+        self.controls = controls
         lyrics = music.lyrics
     }
 
     var body: some View {
-        // Right column: what plays next and the lyrics while a song plays, the day's events when nothing does.
-        // With neither a queue nor lyrics (say, Spotify and an unknown song) the player gets the whole panel.
+        // Right column: what plays next, the lyrics and where the sound goes while a song plays;
+        // the day's events when nothing does.
         HStack(spacing: 18) {
             NowPlayingCard(music: music)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -21,9 +23,9 @@ struct HomeView: View {
                 Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
                 CalendarCard(calendar: calendar)
                     .frame(width: 180)
-            } else if !music.upNext.isEmpty || MusicSideColumn.showsLyrics(lyrics.status) {
+            } else {
                 Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
-                MusicSideColumn(music: music, lyrics: lyrics)
+                MusicSideColumn(music: music, lyrics: lyrics, controls: controls)
                     .frame(width: 210)
                     .transition(.opacity)
             }
@@ -117,10 +119,11 @@ struct NowPlayingCard: View {
 
 // MARK: - Up Next and lyrics
 
-/// "Up Next" and "Lyrics" as two small tabs; just the one when only one has anything.
+/// "Up Next", "Lyrics" and a speaker for the sound output, as small tabs; Up Next and Lyrics only when they have something.
 struct MusicSideColumn: View {
     @ObservedObject var music: MusicManager
     @ObservedObject var lyrics: LyricsManager
+    let controls: SystemControls
     @AppStorage("homeSideTab") private var chosen = "upNext"
 
     /// Lyrics found, or still being looked for.
@@ -131,14 +134,19 @@ struct MusicSideColumn: View {
     var body: some View {
         let hasQueue = !music.upNext.isEmpty
         let hasLyrics = Self.showsLyrics(lyrics.status)
-        let tab = !hasQueue ? "lyrics" : !hasLyrics ? "upNext" : chosen
+        let available = (hasQueue ? ["upNext"] : []) + (hasLyrics ? ["lyrics"] : []) + ["output"]
+        let tab = available.contains(chosen) ? chosen : available[0]
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
-                if hasQueue { tabButton("upNext", tr("ถัดไป", "Up Next"), selected: tab == "upNext") }
-                if hasLyrics { tabButton("lyrics", tr("เนื้อเพลง", "Lyrics"), selected: tab == "lyrics") }
+                if hasQueue { tabButton("upNext", Text(tr("ถัดไป", "Up Next")), selected: tab == "upNext") }
+                if hasLyrics { tabButton("lyrics", Text(tr("เนื้อเพลง", "Lyrics")), selected: tab == "lyrics") }
+                tabButton("output", Text(Image(systemName: "hifispeaker.fill")), selected: tab == "output")
+                    .help(tr("ลำโพงและหูฟัง", "Speakers & headphones"))
             }
             Group {
-                if tab == "lyrics" {
+                if tab == "output" {
+                    OutputPicker(controls: controls)
+                } else if tab == "lyrics" {
                     LyricsView(music: music, lyrics: lyrics)
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
@@ -156,9 +164,9 @@ struct MusicSideColumn: View {
         .animation(.easeInOut(duration: 0.2), value: tab)
     }
 
-    private func tabButton(_ id: String, _ title: String, selected: Bool) -> some View {
+    private func tabButton(_ id: String, _ title: Text, selected: Bool) -> some View {
         Button { chosen = id } label: {
-            Text(title)
+            title
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(selected ? 0.95 : 0.45))
                 .padding(.horizontal, 8)
@@ -167,6 +175,66 @@ struct MusicSideColumn: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Volume, and the speakers and headphones to choose from; the one playing has a tick.
+struct OutputPicker: View {
+    @ObservedObject var controls: SystemControls
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: controls.muted || controls.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .frame(width: 16)
+                LevelSlider(value: controls.muted ? 0 : controls.volume) { controls.setVolume($0) }
+                    .frame(height: 16)
+            }
+            .padding(.horizontal, 6)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 2) {
+                    ForEach(controls.outputs) { output in
+                        OutputRow(output: output, selected: output.id == controls.currentOutput) {
+                            controls.setOutput(output)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct OutputRow: View {
+    let output: AudioOutput
+    let selected: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: output.symbol)
+                    .font(.system(size: 13))
+                    .frame(width: 22)
+                    .foregroundStyle(selected ? Color.white : Color.white.opacity(0.6))
+                Text(output.name)
+                    .font(.system(size: 11.5, weight: selected ? .semibold : .medium))
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                if selected {
+                    Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
+                }
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 6)
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.white.opacity(selected ? 0.12 : hovering ? 0.08 : 0)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
     }
 }
 

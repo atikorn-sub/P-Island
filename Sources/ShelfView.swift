@@ -125,7 +125,7 @@ struct ShelfItemView: View {
         .onTapGesture(count: 2) { shelf.open(item) }
         .onDrag { NSItemProvider(contentsOf: item.url) ?? NSItemProvider() }
         .contextMenu {
-            Button(tr("เปิด", "On")) { shelf.open(item) }
+            Button(tr("เปิด", "Open")) { shelf.open(item) }
             Button(tr("แสดงใน Finder", "Show in Finder")) { shelf.reveal(item) }
             Button(tr("ส่ง AirDrop", "AirDrop")) { shelf.airDrop([item.url]) }
             let targets = Converter.targets(for: item.url)

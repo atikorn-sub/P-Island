@@ -4,3 +4,4 @@
 "NSBluetoothAlwaysUsageDescription" = "P Island shows when AirPods and other Bluetooth devices connect, with their battery levels.";
 "NSSpeechRecognitionUsageDescription" = "P Island turns speech in your audio and video files into text, only when you ask.";
 "NSAudioCaptureUsageDescription" = "P Island listens to what your Mac is playing so the notch waveform moves with the music. Nothing is recorded or saved.";
+"NSCameraUsageDescription" = "P Island shows your front camera as a mirror in the notch when you open the Mirror tab. Nothing is recorded.";
