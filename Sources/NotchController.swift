@@ -159,6 +159,7 @@ final class NotchController {
         closeWork?.cancel()
         closeWork = nil
         stickyUntil = nil
+        state.shelf.dropTargeting = false
         guard state.isOpen else { return }
         state.isOpen = false
         panel.ignoresMouseEvents = true
@@ -184,7 +185,7 @@ final class NotchController {
     // MARK: Mouse tracking
 
     private func installMonitors() {
-        let mask: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .leftMouseDown]
+        let mask: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .leftMouseDown, .leftMouseUp]
         if let global = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: { [weak self] in self?.handle($0) }) {
             monitors.append(global)
         }
@@ -274,6 +275,11 @@ final class NotchController {
             }
         case .leftMouseDragged:
             handleDrag()
+        case .leftMouseUp:
+            // The drag ended (dropped or let go elsewhere): back to the normal shelf once the drop has landed.
+            if state.shelf.dropTargeting {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in self?.state.shelf.dropTargeting = false }
+            }
         default:
             evaluateHover()
         }
@@ -290,9 +296,13 @@ final class NotchController {
         }
         let p = NSEvent.mouseLocation
         if state.isOpen {
-            if openRect.contains(p), state.tab != .shelf { state.tab = .shelf }
+            if openRect.contains(p) {
+                if state.tab != .shelf { state.tab = .shelf }
+                if !state.shelf.dropTargeting { state.shelf.dropTargeting = true }
+            }
             evaluateHover()
         } else if dragHotRect.contains(p) {
+            state.shelf.dropTargeting = true
             open(tab: .shelf)
         }
     }

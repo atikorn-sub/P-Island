@@ -13,6 +13,10 @@ struct ShelfItem: Identifiable, Equatable {
 final class ShelfManager: ObservableObject {
     @Published private(set) var items: [ShelfItem] = []
     @Published private(set) var converting: Set<URL> = []
+    /// Items picked with a click, for acting on several at once.
+    @Published var selection: Set<URL> = []
+    /// A file drag is on its way to the notch: the shelf shows its drop zones.
+    @Published var dropTargeting = false
 
     var onAdded: ((Int) -> Void)?
 
@@ -69,12 +73,81 @@ final class ShelfManager: ObservableObject {
 
     func remove(_ item: ShelfItem) {
         items.removeAll { $0 == item }
+        selection.remove(item.url)
+        save()
+    }
+
+    func remove(_ urls: [URL]) {
+        items.removeAll { urls.contains($0.url) }
+        selection.subtract(urls)
         save()
     }
 
     func clear() {
         items.removeAll()
+        selection.removeAll()
         save()
+    }
+
+    func toggleSelection(_ item: ShelfItem) {
+        if selection.contains(item.url) { selection.remove(item.url) } else { selection.insert(item.url) }
+    }
+
+    /// The picked items in shelf order, or everything when nothing is picked.
+    var selectedOrAll: [URL] {
+        let picked = items.map(\.url).filter { selection.contains($0) }
+        return picked.isEmpty ? items.map(\.url) : picked
+    }
+
+    /// Puts the files on the clipboard, ready to paste into Finder, Mail, LINE and so on.
+    func copyFiles(_ urls: [URL]) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.writeObjects(urls as [NSURL])
+        onMessage?(tr("คัดลอกแล้ว", "Copied"), urls.count == 1 ? urls[0].lastPathComponent : tr("\(urls.count) ไฟล์", "\(urls.count) files"), true)
+    }
+
+    func copyPaths(_ urls: [URL]) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(urls.map(\.path).joined(separator: "\n"), forType: .string)
+        onMessage?(tr("คัดลอกที่อยู่ไฟล์แล้ว", "Path copied"), urls.count == 1 ? urls[0].path : tr("\(urls.count) ไฟล์", "\(urls.count) files"), true)
+    }
+
+    /// One .zip of the files, saved beside the first one and put on the shelf.
+    func zip(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        urls.forEach { converting.insert($0) }
+        Converter.zip(urls) { [weak self] output in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                urls.forEach { self.converting.remove($0) }
+                if let output {
+                    self.add([output])
+                    self.onMessage?(tr("บีบอัดเป็น zip แล้ว", "Zipped"), output.lastPathComponent, true)
+                } else {
+                    self.onMessage?(tr("บีบอัดไม่สำเร็จ", "Couldn't zip"), "", false)
+                }
+            }
+        }
+    }
+
+    /// Smaller JPEG copies of the images (longest side 2048 px), for sending in chats and email.
+    func shrinkImages(_ urls: [URL]) {
+        let images = urls.filter(Converter.isImage)
+        guard !images.isEmpty else { return NSSound.beep() }
+        images.forEach { converting.insert($0) }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let results = images.map { ($0, Converter.shrinkImage($0)) }
+            DispatchQueue.main.async {
+                results.forEach { self.converting.remove($0.0) }
+                let outputs = results.compactMap(\.1)
+                self.add(outputs)
+                let saved = Swift.zip(images, outputs).reduce(Int64(0)) { $0 + Converter.size($1.0) - Converter.size($1.1) }
+                self.onMessage?(tr("ย่อรูปแล้ว \(outputs.count) รูป", "Shrank \(outputs.count) image\(outputs.count == 1 ? "" : "s")"),
+                                saved > 0 ? tr("ประหยัดไป \(Converter.format(saved))", "Saved \(Converter.format(saved))") : "", !outputs.isEmpty)
+            }
+        }
     }
 
     func open(_ item: ShelfItem) {
@@ -202,6 +275,62 @@ enum ConversionTarget: String, CaseIterable, Identifiable {
 }
 
 enum Converter {
+    static func isImage(_ url: URL) -> Bool {
+        UTType(filenameExtension: url.pathExtension)?.conforms(to: .image) == true
+    }
+
+    static func size(_ url: URL) -> Int64 {
+        Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+    }
+
+    static func format(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
+    /// A single file or folder zips as "<name>.zip"; several go into "Archive.zip", each at the top level.
+    static func zip(_ urls: [URL], completion: @escaping (URL?) -> Void) {
+        guard let first = urls.first else { return completion(nil) }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let fm = FileManager.default
+            var source = first
+            var staging: URL?
+            if urls.count > 1 {
+                // Gather them in one folder (APFS clones, so no extra space) and zip that folder's contents.
+                let dir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                    .appendingPathComponent("Archive", isDirectory: true)
+                try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+                for url in urls { try? fm.copyItem(at: url, to: dir.appendingPathComponent(url.lastPathComponent)) }
+                source = dir
+                staging = dir.deletingLastPathComponent()
+            }
+            let name = urls.count > 1 ? "Archive" : first.lastPathComponent
+            let output = outputURL(for: first.deletingLastPathComponent().appendingPathComponent(name), ext: "zip")
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+            // --keepParent for one item keeps its own name inside; for several, the files sit at the top.
+            // No resource forks or extended attributes, so no "__MACOSX" clutter when it's opened on Windows.
+            task.arguments = ["-c", "-k", "--norsrc", "--noextattr", "--noacl"] + (urls.count > 1 ? [] : ["--keepParent"]) + [source.path, output.path]
+            try? task.run()
+            task.waitUntilExit()
+            if let staging { try? fm.removeItem(at: staging) }
+            completion(task.terminationStatus == 0 && fm.fileExists(atPath: output.path) ? output : nil)
+        }
+    }
+
+    /// A JPEG copy no longer than 2048 px on its longest side, turned upright, named "<name> (small).jpg".
+    static func shrinkImage(_ source: URL) -> URL? {
+        guard let src = CGImageSourceCreateWithURL(source as CFURL, nil) else { return nil }
+        let options = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                       kCGImageSourceCreateThumbnailWithTransform: true,
+                       kCGImageSourceThumbnailMaxPixelSize: 2048] as CFDictionary
+        guard let image = CGImageSourceCreateThumbnailAtIndex(src, 0, options) else { return nil }
+        let base = source.deletingPathExtension().lastPathComponent + tr(" (ย่อ)", " (small)")
+        let output = outputURL(for: source.deletingLastPathComponent().appendingPathComponent(base), ext: "jpg")
+        guard let dest = CGImageDestinationCreateWithURL(output as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, image, [kCGImageDestinationLossyCompressionQuality: 0.8] as CFDictionary)
+        return CGImageDestinationFinalize(dest) ? output : nil
+    }
+
     static func targets(for url: URL) -> [ConversionTarget] {
         guard let type = UTType(filenameExtension: url.pathExtension) else { return [] }
         let options: [ConversionTarget]

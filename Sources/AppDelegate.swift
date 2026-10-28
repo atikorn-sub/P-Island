@@ -228,6 +228,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// Opening P Island again (Launchpad, Finder, Spotlight) while it runs shows Settings, so it isn't a dead click.
+    /// Files opened with P Island (Finder's Open With, or `open -a "P Island" file` in Terminal) go on the shelf.
+    func application(_ sender: NSApplication, open urls: [URL]) {
+        let files = urls.filter(\.isFileURL)
+        guard !files.isEmpty else { return }
+        state?.shelf.add(files)
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         state?.controls.boostBrightness(false)
     }
