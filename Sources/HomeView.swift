@@ -5,7 +5,8 @@ struct HomeView: View {
     @ObservedObject var calendar: CalendarManager
 
     var body: some View {
-        // While a song plays it gets the whole panel; the day's events come back when nothing plays.
+        // Right column: what plays next while a song plays, the day's events when nothing does.
+        // A player that doesn't share its queue (Spotify) gets the whole panel.
         HStack(spacing: 18) {
             NowPlayingCard(music: music)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -13,9 +14,15 @@ struct HomeView: View {
                 Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
                 CalendarCard(calendar: calendar)
                     .frame(width: 180)
+            } else if !music.upNext.isEmpty {
+                Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
+                UpNextList(music: music)
+                    .frame(width: 210)
+                    .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: music.hasTrack)
+        .animation(.easeInOut(duration: 0.3), value: music.upNext.isEmpty)
         .onAppear { calendar.reload() }
     }
 }
@@ -97,6 +104,84 @@ struct NowPlayingCard: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Up Next
+
+struct UpNextList: View {
+    @ObservedObject var music: MusicManager
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(tr("ถัดไป", "Up Next"))
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.5))
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(spacing: 2) {
+                    ForEach(music.upNext) { item in
+                        UpNextRow(item: item) { music.play(item) }
+                    }
+                }
+            }
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+}
+
+private struct UpNextRow: View {
+    let item: QueueItem
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                thumbnail
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(item.title)
+                        .font(.system(size: 11.5, weight: .medium))
+                        .lineLimit(1)
+                    Text(item.artist)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 4)
+                if hovering {
+                    Image(systemName: "play.fill").font(.system(size: 10))
+                } else {
+                    Text(item.duration)
+                        .font(.system(size: 10).monospacedDigit())
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.white.opacity(hovering ? 0.1 : 0)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help(tr("เล่น \(item.title)", "Play \(item.title)"))
+    }
+
+    @ViewBuilder private var thumbnail: some View {
+        let shape = RoundedRectangle(cornerRadius: 5, style: .continuous)
+        if let url = URL(string: item.artworkURL), !item.artworkURL.isEmpty {
+            AsyncImage(url: url) { image in
+                image.resizable().aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Color.white.opacity(0.08)
+            }
+            .frame(width: 30, height: 30)
+            .clipShape(shape)
+        } else {
+            shape.fill(Color.white.opacity(0.08))
+                .frame(width: 30, height: 30)
+                .overlay(Image(systemName: "music.note").font(.system(size: 11)).foregroundStyle(.white.opacity(0.4)))
+        }
     }
 }
 

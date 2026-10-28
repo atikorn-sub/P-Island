@@ -13,6 +13,16 @@ final class YouTubeMusicBridge {
         let duration: Double
         let position: Double
         let artwork: String
+        /// Songs after this one (extension 1.4 and later).
+        let queue: [QueueEntry]?
+    }
+
+    struct QueueEntry: Decodable, Equatable {
+        let index: Int
+        let title: String
+        let artist: String
+        let artwork: String
+        let duration: String
     }
 
     private struct Message: Decodable {
@@ -50,6 +60,10 @@ final class YouTubeMusicBridge {
         case .next: payload["command"] = "next"
         case .previous: payload["command"] = "previous"
         case .focus: payload["command"] = "focus"
+        case .playItem(let index, let title):
+            payload["command"] = "playQueueItem"
+            payload["value"] = index
+            payload["title"] = title
         case .seek(let s):
             payload["command"] = "seek"
             payload["value"] = s
@@ -148,6 +162,11 @@ final class YouTubeMusicBridge {
         if old?.title != new?.title || old?.artist != new?.artist || old?.playing != new?.playing {
             NSLog("%@", "Islet music [YouTube Music] \(new.map { "\($0.playing ? "playing" : "paused"): \($0.title) — \($0.artist) [\(TimerManager.format($0.position)) / \(TimerManager.format($0.duration))]" } ?? "(no track)")")
             notify()
+        } else if old?.queue != new?.queue {
+            notify()
+        }
+        if old?.queue?.count != new?.queue?.count {
+            NSLog("%@", "Islet music [YouTube Music] queue: \(new?.queue.map { "\($0.count) next, first: \($0.first?.title ?? "-")" } ?? "not sent")")
         }
     }
 

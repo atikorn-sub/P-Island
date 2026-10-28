@@ -22,6 +22,47 @@ function barTimes(bar) {
   return null;
 }
 
+function label(el) {
+  return (el?.getAttribute('title') || el?.textContent || '').trim();
+}
+
+// The queue panel's rows, in play order. Automix rows carry a hidden "counterpart" copy
+// (the video or song version of the same track); those are skipped.
+function queueRows() {
+  const root = document.querySelector('ytmusic-player-queue#queue') || document.querySelector('ytmusic-player-queue');
+  if (!root) return [];
+  return [...root.querySelectorAll('ytmusic-player-queue-item')].filter((el) => !el.closest('#counterpart-renderer'));
+}
+
+// The songs after the one playing, up to 25.
+function readQueue() {
+  const rows = queueRows();
+  const current = rows.findIndex((el) => el.hasAttribute('selected'));
+  if (current < 0) return [];
+  return rows.slice(current + 1, current + 26).map((el, i) => {
+    const src = el.querySelector('img')?.src || '';
+    return {
+      index: current + 1 + i,
+      title: label(el.querySelector('.song-title')),
+      artist: label(el.querySelector('.byline')).split('•')[0].trim(),
+      artwork: src.startsWith('https://') ? src : '',
+      duration: label(el.querySelector('.duration')),
+    };
+  }).filter((item) => item.title);
+}
+
+function playQueueItem(index, title) {
+  const rows = queueRows();
+  // The queue may have shifted since Islet saw it; fall back to finding the song by name.
+  let row = rows[index];
+  if (!row || label(row.querySelector('.song-title')) !== title) {
+    row = rows.find((el) => label(el.querySelector('.song-title')) === title);
+  }
+  if (!row) return;
+  const target = row.querySelector('ytmusic-play-button-renderer') || row.querySelector('.song-info') || row;
+  target.click();
+}
+
 function readState() {
   const video = mainVideo();
   const meta = navigator.mediaSession && navigator.mediaSession.metadata;
@@ -44,6 +85,7 @@ function readState() {
     duration,
     position: position || 0,
     artwork,
+    queue: readQueue(),
   };
 }
 
@@ -78,6 +120,9 @@ function run(command) {
       break;
     case 'previous':
       document.querySelector('.previous-button')?.click();
+      break;
+    case 'playQueueItem':
+      if (typeof command.value === 'number') playQueueItem(command.value, command.title || '');
       break;
     case 'seek':
       if (video && typeof command.value === 'number') video.currentTime = command.value;

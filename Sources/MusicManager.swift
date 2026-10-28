@@ -5,6 +5,18 @@ import SwiftUI
 enum PlayerCommand {
     case playPause, next, previous, focus
     case seek(Double)
+    /// Jump to a song in the queue: its position there, and its title as a check.
+    case playItem(index: Int, title: String)
+}
+
+/// A song waiting after the current one.
+struct QueueItem: Identifiable, Equatable {
+    var id: String { "\(index)|\(title)" }
+    let index: Int
+    let title: String
+    let artist: String
+    let artworkURL: String
+    let duration: String
 }
 
 enum MusicPlayer: String, CaseIterable, Identifiable {
@@ -79,6 +91,7 @@ enum MusicPlayer: String, CaseIterable, Identifiable {
         case .previous: verb = "previous track"
         case .focus: verb = "activate"
         case .seek(let s): verb = "set player position to \(String(format: "%.2f", s))"
+        case .playItem(let index, _): verb = "play track \(index) of current playlist"
         }
         return "tell application \"\(rawValue)\" to \(verb)"
     }
@@ -93,6 +106,8 @@ private struct PlayerSnapshot {
     var duration: Double
     var position: Double
     var artworkURL: String
+    /// What plays next, when the player says it here (YouTube Music); nil means ask separately.
+    var queue: [QueueItem]?
 }
 
 private struct ScriptResult {
@@ -130,6 +145,8 @@ final class MusicManager: ObservableObject {
     /// The cover, tiny and heavily blurred: the colours behind the panel's ambient glow.
     @Published private(set) var ambientImage: NSImage?
     @Published private(set) var needsPermission: MusicPlayer?
+    /// Songs after the current one: YouTube Music's queue, or the rest of Music's playlist. Empty for Spotify.
+    @Published private(set) var upNext: [QueueItem] = []
 
     /// Called with (title, artist) when a new song starts playing (not for the song found at launch).
     var onTrackChange: ((String, String) -> Void)?
@@ -138,6 +155,7 @@ final class MusicManager: ObservableObject {
     private var hasApplied = false
     private var elapsedAt = Date()
     private var artworkKey: String?
+    private var queueKey: String?
     private var pollWork: DispatchWorkItem?
 
     private let youtube = YouTubeMusicBridge()
@@ -199,6 +217,13 @@ final class MusicManager: ObservableObject {
         elapsedAt = Date()
         objectWillChange.send()
         send(p, .seek(seconds))
+    }
+
+    func play(_ item: QueueItem) {
+        guard let p = player else { return }
+        // Drop it and what came before from the list straight away; the player confirms shortly.
+        upNext.removeAll { $0.index <= item.index }
+        send(p, .playItem(index: item.index, title: item.title))
     }
 
     /// With an explicit player (the "Open …" buttons) YouTube Music opens in Chrome; otherwise brings the
@@ -273,7 +298,11 @@ final class MusicManager: ObservableObject {
         guard let (s, receivedAt) = youtube.current(), !s.title.isEmpty else { return nil }
         let position = s.position + (s.playing ? Date().timeIntervalSince(receivedAt) : 0)
         return PlayerSnapshot(player: .youtubeMusic, playing: s.playing, title: s.title, artist: s.artist,
-                              album: s.album, duration: s.duration, position: position, artworkURL: s.artwork)
+                              album: s.album, duration: s.duration, position: position, artworkURL: s.artwork,
+                              queue: (s.queue ?? []).map {
+                                  QueueItem(index: $0.index, title: $0.title, artist: $0.artist,
+                                            artworkURL: $0.artwork, duration: $0.duration)
+                              })
     }
 
     private static func parse(_ desc: NSAppleEventDescriptor, player: MusicPlayer) -> PlayerSnapshot? {
@@ -304,6 +333,8 @@ final class MusicManager: ObservableObject {
                 ambientImage = nil
                 accent = .white
                 artworkKey = nil
+                upNext = []
+                queueKey = nil
             }
             return
         }
@@ -320,6 +351,60 @@ final class MusicManager: ObservableObject {
         if key != artworkKey {
             artworkKey = key
             loadArtwork(for: s, key: key)
+        }
+        updateQueue(from: s)
+    }
+
+    private func updateQueue(from s: PlayerSnapshot) {
+        if let queue = s.queue {
+            if upNext != queue { upNext = queue }
+            return
+        }
+        // Music: read the playlist once per song.
+        let key = "\(s.player.rawValue)|\(s.title)|\(s.artist)"
+        guard key != queueKey else { return }
+        queueKey = key
+        guard s.player == .music else {
+            if !upNext.isEmpty { upNext = [] }
+            return
+        }
+        queue.async {
+            let items = self.run(Self.musicQueueScript).descriptor.map(Self.parseQueue) ?? []
+            DispatchQueue.main.async {
+                guard self.queueKey == key else { return }
+                if self.upNext != items { self.upNext = items }
+            }
+        }
+    }
+
+    /// The next 25 tracks of the playlist Music is playing from, as {index, name, artist, duration}.
+    /// Nothing while Shuffle is on, since the playlist order isn't the play order then.
+    private static let musicQueueScript = """
+    tell application "Music"
+        if shuffle enabled then return {}
+        set p to current playlist
+        set i to index of current track
+        set n to count of tracks of p
+        set stopAt to i + 25
+        if stopAt > n then set stopAt to n
+        set out to {}
+        repeat with k from (i + 1) to stopAt
+            set t to track k of p
+            set end of out to {k, name of t, artist of t, duration of t}
+        end repeat
+        return out
+    end tell
+    """
+
+    private static func parseQueue(_ desc: NSAppleEventDescriptor) -> [QueueItem] {
+        guard desc.numberOfItems > 0 else { return [] }
+        return (1...desc.numberOfItems).compactMap { i in
+            guard let row = desc.atIndex(i), row.numberOfItems >= 4,
+                  let title = row.atIndex(2)?.stringValue, !title.isEmpty else { return nil }
+            let seconds = row.atIndex(4)?.doubleValue ?? 0
+            return QueueItem(index: Int(row.atIndex(1)?.int32Value ?? 0), title: title,
+                             artist: row.atIndex(3)?.stringValue ?? "", artworkURL: "",
+                             duration: seconds > 0 ? ProgressRow.format(seconds) : "")
         }
     }
 
