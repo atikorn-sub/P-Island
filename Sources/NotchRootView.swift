@@ -11,6 +11,7 @@ struct NotchRootView: View {
     @ObservedObject private var timer: TimerManager
     @ObservedObject private var settings: AppSettings
     @ObservedObject private var downloads: DownloadMonitor
+    @ObservedObject private var calendar: CalendarManager
 
     init(state: NotchState) {
         self.state = state
@@ -18,6 +19,7 @@ struct NotchRootView: View {
         timer = state.timer
         settings = state.settings
         downloads = state.downloads
+        calendar = state.calendar
     }
 
     var body: some View {
@@ -121,6 +123,15 @@ struct ClosedNotchView: View {
                 .foregroundStyle(on ? Color.orange : Color.white.opacity(0.6))
         case .download:
             downloadBadge
+        case .upcoming:
+            if let event = state.calendar.upcoming {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color(nsColor: event.color))
+                    .frame(width: h(0.52), height: h(0.52))
+                    .overlay(Image(systemName: event.meetingURL != nil ? "video.fill" : "calendar")
+                        .font(.system(size: h(0.26), weight: .bold))
+                        .foregroundStyle(.white))
+            }
         }
     }
 
@@ -135,6 +146,14 @@ struct ClosedNotchView: View {
                 .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
                 .foregroundStyle(timerColor)
                 .minimumScaleFactor(0.6)
+        case .upcoming:
+            // Re-reads the clock every few seconds so the minutes tick down on their own.
+            TimelineView(.periodic(from: .now, by: 5)) { ctx in
+                Text(upcomingText(at: ctx.date))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(state.calendar.upcoming.map { Color(nsColor: $0.color) } ?? .white)
+                    .minimumScaleFactor(0.6)
+            }
         case .download:
             Text(downloadText)
                 .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
@@ -166,6 +185,13 @@ struct ClosedNotchView: View {
                     .offset(y: sin(t * 5) * 1.5)
             }
         }
+    }
+
+    /// "in 9 min" style, then "now" once it has started.
+    private func upcomingText(at date: Date) -> String {
+        guard let event = state.calendar.upcoming else { return "" }
+        let minutes = Int((event.start.timeIntervalSince(date) / 60).rounded(.up))
+        return minutes <= 0 ? tr("ตอนนี้", "Now") : tr("\(minutes) น.", "\(minutes)m")
     }
 
     /// "45%" when the size is known, otherwise how much has come down, e.g. "12.4 MB".

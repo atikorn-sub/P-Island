@@ -51,6 +51,8 @@
 	<string>P Island listens to what your Mac is playing so the notch waveform moves with the music. Nothing is recorded or saved.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>P Island shows when AirPods and other Bluetooth devices connect, with their battery levels.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>P Island shows today's reminders in the notch and lets you tick them off.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>P Island shows your events in the notch and reminds you before meetings.</string>
 	<key>NSCameraUsageDescription</key>

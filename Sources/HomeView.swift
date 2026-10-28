@@ -509,15 +509,20 @@ struct CalendarCard: View {
                 message(tr("ยังไม่ได้อนุญาตปฏิทิน", "No calendar access"))
                 Button(tr("เปิดการตั้งค่า", "Open Settings")) { calendar.openPrivacySettings() }.buttonStyle(PillButtonStyle())
             case .authorized:
+                let todos = Calendar.current.isDateInToday(calendar.selectedDay) ? Array(calendar.reminders.prefix(2)) : []
+                let eventRoom = todos.isEmpty ? 3 : 2
                 if calendar.events.isEmpty {
                     message(tr("วันนี้ไม่มีนัดแล้ว", "No more events today"))
                 } else {
-                    ForEach(calendar.events.prefix(3)) { event in
+                    ForEach(calendar.events.prefix(eventRoom)) { event in
                         EventRow(event: event)
                     }
-                    if calendar.events.count > 3 {
-                        message(tr("และอีก \(calendar.events.count - 3) นัด", "+\(calendar.events.count - 3) more"))
+                    if calendar.events.count > eventRoom {
+                        message(tr("และอีก \(calendar.events.count - eventRoom) นัด", "+\(calendar.events.count - eventRoom) more"))
                     }
+                }
+                ForEach(todos) { item in
+                    ReminderRow(item: item) { calendar.complete(item) }
                 }
             }
             Spacer(minLength: 0)

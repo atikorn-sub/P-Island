@@ -113,6 +113,7 @@ enum ClosedActivity: Equatable {
     case miniPlayer
     case transient(TransientActivity)
     case download
+    case upcoming
     case alert(NotchAlert)
 }
 
@@ -192,6 +193,7 @@ final class NotchState: ObservableObject {
         if let alert { return .alert(alert) }
         if let transient { return .transient(transient) }
         if downloads.primary != nil { return .download }
+        if settings.liveMeetingCountdown, calendar.upcoming != nil { return .upcoming }
         // Slim bar: stays out a little while after pausing so play is still one click away.
         if settings.closedStyle == "mini", music.hasTrack, music.isPlaying || music.recentlyPaused {
             return .miniPlayer

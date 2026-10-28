@@ -6,3 +6,4 @@
 "NSAudioCaptureUsageDescription" = "P Island listens to what your Mac is playing so the notch waveform moves with the music. Nothing is recorded or saved.";
 "NSCameraUsageDescription" = "P Island shows your front camera as a mirror in the notch when you open the Mirror tab. Nothing is recorded.";
 "NSDownloadsFolderUsageDescription" = "P Island watches your Downloads folder to show download progress in the notch. It only looks at file names and sizes.";
+"NSRemindersFullAccessUsageDescription" = "P Island shows today's reminders in the notch and lets you tick them off.";

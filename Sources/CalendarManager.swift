@@ -12,6 +12,17 @@ struct CalendarEvent: Identifiable {
     let meetingURL: URL?
 }
 
+/// An unfinished reminder from the Reminders app.
+struct ReminderItem: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let due: Date?
+    /// The due date has a time, not just a day.
+    let hasTime: Bool
+    let color: NSColor
+    let overdue: Bool
+}
+
 final class CalendarManager: ObservableObject {
     enum Status { case notDetermined, denied, authorized }
 
@@ -21,11 +32,28 @@ final class CalendarManager: ObservableObject {
     /// Month shown in the Calendar tab, as its first day.
     @Published private(set) var month: Date
     @Published var selectedDay: Date {
-        didSet { selectedEvents = events(on: selectedDay) }
+        didSet {
+            selectedEvents = events(on: selectedDay)
+            reloadReminders()
+            // Stepping past the month's edge turns the month too.
+            let cal = Calendar.current
+            if !cal.isDate(selectedDay, equalTo: month, toGranularity: .month),
+               let first = cal.date(from: cal.dateComponents([.year, .month], from: selectedDay)) {
+                month = first
+                reloadMonth()
+            }
+        }
     }
     @Published private(set) var selectedEvents: [CalendarEvent] = []
     /// Day-of-month numbers in `month` that have events.
     @Published private(set) var busyDays: Set<Int> = []
+
+    /// Reminders access, and the unfinished ones for the selected day (today: also overdue and undated).
+    @Published private(set) var remindersStatus: Status
+    @Published private(set) var reminders: [ReminderItem] = []
+
+    /// The next timed event starting within 10 minutes (or begun in the last minute), for the notch's wings.
+    @Published private(set) var upcoming: CalendarEvent?
 
     /// Called once per meeting, about a minute before it starts.
     var onMeetingSoon: ((CalendarEvent) -> Void)?
@@ -40,10 +68,12 @@ final class CalendarManager: ObservableObject {
         month = cal.date(from: cal.dateComponents([.year, .month], from: today)) ?? today
         selectedDay = today
         status = Self.currentStatus()
+        remindersStatus = Self.remindersStatus()
         NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: store, queue: .main) { [weak self] _ in
             self?.reload()
         }
         reload()
+        reloadReminders()
         let timer = Timer(timeInterval: 30, repeats: true) { [weak self] _ in self?.checkMeetings() }
         RunLoop.main.add(timer, forMode: .common)
         meetingTimer = timer
@@ -54,6 +84,96 @@ final class CalendarManager: ObservableObject {
         case .fullAccess: return .authorized
         case .notDetermined: return .notDetermined
         default: return .denied
+        }
+    }
+
+    private static func remindersStatus() -> Status {
+        switch EKEventStore.authorizationStatus(for: .reminder) {
+        case .fullAccess: return .authorized
+        case .notDetermined: return .notDetermined
+        default: return .denied
+        }
+    }
+
+    func requestRemindersAccess() {
+        NSApp.activate(ignoringOtherApps: true)
+        store.requestFullAccessToReminders { [weak self] _, _ in
+            DispatchQueue.main.async {
+                self?.remindersStatus = Self.remindersStatus()
+                self?.reloadReminders()
+            }
+        }
+    }
+
+    func openRemindersPrivacySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// Moves the selected day by `days` (the arrows beside the day's title).
+    func step(days: Int) {
+        if let day = Calendar.current.date(byAdding: .day, value: days, to: selectedDay) { selectedDay = day }
+    }
+
+    func goToToday() {
+        selectedDay = Calendar.current.startOfDay(for: Date())
+    }
+
+    // MARK: Reminders
+
+    func reloadReminders() {
+        remindersStatus = Self.remindersStatus()
+        guard remindersStatus == .authorized else {
+            if !reminders.isEmpty { reminders = [] }
+            return
+        }
+        let cal = Calendar.current
+        let day = cal.startOfDay(for: selectedDay)
+        let isToday = cal.isDateInToday(day)
+        guard let dayEnd = cal.date(byAdding: .day, value: 1, to: day) else { return }
+        let now = Date()
+        let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: nil)
+        store.fetchReminders(matching: predicate) { [weak self] found in
+            let items: [ReminderItem] = (found ?? []).compactMap { r in
+                let due = r.dueDateComponents.flatMap { cal.date(from: $0) }
+                // Today shows what's due today, anything overdue, and things with no date; other days, what's due then.
+                if let due {
+                    guard isToday ? due < dayEnd : (due >= day && due < dayEnd) else { return nil }
+                } else if !isToday {
+                    return nil
+                }
+                let hasTime = r.dueDateComponents?.hour != nil
+                let overdue = due.map { hasTime ? $0 < now : $0 < cal.startOfDay(for: now) } ?? false
+                return ReminderItem(id: r.calendarItemIdentifier, title: r.title ?? "", due: due, hasTime: hasTime,
+                                    color: r.calendar?.color ?? .systemOrange, overdue: overdue)
+            }
+            // Dated first (soonest first), then undated by title.
+            .sorted { a, b in
+                switch (a.due, b.due) {
+                case let (x?, y?): return x < y
+                case (.some, nil): return true
+                case (nil, .some): return false
+                default: return a.title.localizedCompare(b.title) == .orderedAscending
+                }
+            }
+            DispatchQueue.main.async {
+                guard let self, cal.isDate(self.selectedDay, inSameDayAs: day) else { return }
+                if self.reminders != items { self.reminders = items }
+            }
+        }
+    }
+
+    /// Ticks the reminder off in the Reminders app.
+    func complete(_ item: ReminderItem) {
+        guard let reminder = store.calendarItem(withIdentifier: item.id) as? EKReminder else { return }
+        reminders.removeAll { $0.id == item.id }
+        reminder.isCompleted = true
+        do {
+            try store.save(reminder, commit: true)
+        } catch {
+            NSLog("%@", "Islet reminders: couldn't complete '\(item.title)': \(error)")
+            reloadReminders()
         }
     }
 
@@ -88,6 +208,8 @@ final class CalendarManager: ObservableObject {
         events = fetch(from: now, to: endOfDay)
         selectedEvents = events(on: selectedDay)
         reloadMonth()
+        reloadReminders()
+        updateUpcoming()
     }
 
     func events(on day: Date) -> [CalendarEvent] {
@@ -146,7 +268,27 @@ final class CalendarManager: ObservableObject {
         return nil
     }
 
+    private var demoUntil: Date?
+
+    /// `--demo-countdown`: a made-up meeting 7 minutes away, for a minute.
+    func demoUpcoming() {
+        demoUntil = Date().addingTimeInterval(60)
+        upcoming = CalendarEvent(id: "demo", title: tr("ประชุมทีม (ตัวอย่าง)", "Team meeting (sample)"),
+                                 start: Date().addingTimeInterval(7 * 60), end: Date().addingTimeInterval(37 * 60),
+                                 isAllDay: false, color: .systemBlue, meetingURL: URL(string: "https://meet.google.com/"))
+    }
+
+    private func updateUpcoming() {
+        if let until = demoUntil, until > Date() { return }
+        guard status == .authorized else { return }
+        let now = Date()
+        let next = fetch(from: now.addingTimeInterval(-60), to: now.addingTimeInterval(10 * 60))
+            .first { !$0.isAllDay && $0.start > now.addingTimeInterval(-60) }
+        if next?.id != upcoming?.id || (next == nil) != (upcoming == nil) { upcoming = next }
+    }
+
     private func checkMeetings() {
+        updateUpcoming()
         guard status == .authorized else { return }
         let now = Date()
         for event in fetch(from: now.addingTimeInterval(-60), to: now.addingTimeInterval(90)) {

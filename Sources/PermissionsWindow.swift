@@ -12,6 +12,7 @@ enum PermissionState {
 final class PermissionsModel: ObservableObject {
     @Published private(set) var fullDisk: PermissionState = .unknown
     @Published private(set) var calendar: PermissionState = .unknown
+    @Published private(set) var reminders: PermissionState = .unknown
     @Published private(set) var bluetooth: PermissionState = .unknown
     @Published private(set) var speech: PermissionState = .unknown
     @Published private(set) var automation: [String: PermissionState] = [:]
@@ -57,6 +58,12 @@ final class PermissionsModel: ObservableObject {
         default: calendar = .denied
         }
 
+        switch EKEventStore.authorizationStatus(for: .reminder) {
+        case .fullAccess: reminders = .granted
+        case .notDetermined: reminders = .notAsked
+        default: reminders = .denied
+        }
+
         switch CBManager.authorization {
         case .allowedAlways: bluetooth = .granted
         case .notDetermined: bluetooth = .notAsked
@@ -88,6 +95,10 @@ final class PermissionsModel: ObservableObject {
 
     func fixCalendar() {
         calendar == .notAsked ? state.calendar.requestAccess() : open("Privacy_Calendars")
+    }
+
+    func fixReminders() {
+        reminders == .notAsked ? state.calendar.requestRemindersAccess() : open("Privacy_Reminders")
     }
 
     func fixBluetooth() {
@@ -180,6 +191,10 @@ struct PermissionsList: View {
             PermissionRow(symbol: "calendar", color: .orange, title: "Calendar",
                           reason: tr("นัดหมายวันนี้ ปฏิทินรายเดือน และปุ่มเข้าประชุม", "Today's events, the month calendar and meeting join buttons"),
                           state: model.calendar, action: model.fixCalendar)
+            Divider()
+            PermissionRow(symbol: "checklist", color: .orange, title: "Reminders",
+                          reason: tr("รายการเตือนความจำของวันนี้ และติ๊กว่าทำเสร็จจากรอยบาก", "Today's reminders, ticked off right from the notch"),
+                          state: model.reminders, action: model.fixReminders)
             Divider()
             PermissionRow(symbol: "airpodspro", color: .blue, title: "Bluetooth",
                           reason: tr("แจ้งตอน AirPods และอุปกรณ์บลูทูธเชื่อมต่อ พร้อม % แบต", "Alerts when AirPods and Bluetooth devices connect, with battery %"),

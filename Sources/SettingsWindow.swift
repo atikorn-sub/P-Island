@@ -273,6 +273,9 @@ private struct AlertsPane: View {
                 DescribedToggle(title: tr("กล้องและไมค์", "Camera & microphone"),
                                 detail: tr("บอกเมื่อมีแอปเริ่มหรือเลิกใช้กล้องหรือไมค์", "Shows when an app starts or stops using the camera or microphone"),
                                 isOn: $settings.liveCameraMic)
+                DescribedToggle(title: tr("นับถอยหลังก่อนนัด", "Countdown to the next event"),
+                                detail: tr("10 นาทีก่อนนัดหรือประชุม รอยบากนับถอยหลังให้", "The notch counts down the last 10 minutes before an event or meeting"),
+                                isOn: $settings.liveMeetingCountdown)
                 DescribedToggle(title: "Caps Lock",
                                 detail: tr("บอกตอนเปิดหรือปิด Caps Lock", "Shows Caps Lock turning on or off"),
                                 isOn: $settings.liveCapsLock)

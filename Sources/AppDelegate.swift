@@ -206,6 +206,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if args.contains("--demo-alerts") {
             Demo.runAlerts(state: state)
         }
+        if args.contains("--demo-countdown") {
+            state.calendar.demoUpcoming()
+        }
         if args.contains("--showcase") {
             Demo.runShowcase(controller: controller, state: state)
         }

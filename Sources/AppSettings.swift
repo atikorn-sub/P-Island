@@ -68,6 +68,10 @@ final class AppSettings: ObservableObject {
     @Published var liveCameraMic: Bool {
         didSet { defaults.set(liveCameraMic, forKey: "liveCameraMic") }
     }
+    /// Counting down to the next event in the last ten minutes before it.
+    @Published var liveMeetingCountdown: Bool {
+        didSet { defaults.set(liveMeetingCountdown, forKey: "liveMeetingCountdown") }
+    }
     @Published var liveCapsLock: Bool {
         didSet { defaults.set(liveCapsLock, forKey: "liveCapsLock") }
     }
@@ -116,7 +120,7 @@ final class AppSettings: ObservableObject {
             "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true, "respectFocus": true,
             "artworkFlip": true, "notchStyle": "black", "glassTint": 0.25, "closedStyle": "wings", "ambientGlow": true,
             "lyrics": true, "lyricsInSlimBar": true, "checkUpdates": true,
-            "liveDownloads": true, "liveCameraMic": true, "liveCapsLock": true,
+            "liveDownloads": true, "liveCameraMic": true, "liveCapsLock": true, "liveMeetingCountdown": true,
         ])
         notchStyle = defaults.string(forKey: "notchStyle") ?? "black"
         closedStyle = defaults.string(forKey: "closedStyle") ?? "wings"
@@ -127,6 +131,7 @@ final class AppSettings: ObservableObject {
         liveDownloads = defaults.bool(forKey: "liveDownloads")
         liveCameraMic = defaults.bool(forKey: "liveCameraMic")
         liveCapsLock = defaults.bool(forKey: "liveCapsLock")
+        liveMeetingCountdown = defaults.bool(forKey: "liveMeetingCountdown")
         glassTint = defaults.double(forKey: "glassTint")
         artworkFlip = defaults.bool(forKey: "artworkFlip")
         respectFocus = defaults.bool(forKey: "respectFocus")
