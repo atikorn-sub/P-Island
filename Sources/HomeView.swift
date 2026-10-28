@@ -52,18 +52,25 @@ struct NowPlayingCard: View {
                     .overlay(alignment: .bottomTrailing) { playerBadge }
                     .onTapGesture { music.openPlayer() }
                 VStack(alignment: .leading, spacing: 2) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(music.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .lineLimit(1)
-                        Text(music.artist)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.6))
-                            .lineLimit(1)
+                    // Song on the left, the sound output button (as in Control Center) on the right.
+                    HStack(alignment: .top, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(music.title)
+                                .font(.system(size: 15, weight: .semibold))
+                                .lineLimit(1)
+                            Text(music.artist)
+                                .font(.system(size: 13))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .onTapGesture { music.openPlayer() }
+                        .help(tr("เปิดใน \(music.player?.rawValue ?? "แอปเพลง")", "Open in \(music.player?.rawValue ?? "the player")"))
+                        AudioRouteButton(onPresenting: holdOpen)
+                            .frame(width: 26, height: 26)
+                            .help(tr("เลือกลำโพงหรือหูฟัง", "Choose speakers or headphones"))
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture { music.openPlayer() }
-                    .help(tr("เปิดใน \(music.player?.rawValue ?? "แอปเพลง")", "Open in \(music.player?.rawValue ?? "the player")"))
                     Spacer(minLength: 6)
                     ProgressRow(music: music)
                     controls.padding(.top, 4)
@@ -84,20 +91,11 @@ struct NowPlayingCard: View {
         }
     }
 
-    /// Previous / play / next in the middle, the sound output button (like Control Center's) at the right.
     private var controls: some View {
-        ZStack {
-            HStack(spacing: 26) {
-                ControlButton(symbol: "backward.fill", size: 15) { music.previous() }
-                ControlButton(symbol: music.isPlaying ? "pause.fill" : "play.fill", size: 22) { music.togglePlayPause() }
-                ControlButton(symbol: "forward.fill", size: 15) { music.next() }
-            }
-            HStack {
-                Spacer()
-                AudioRouteButton(onPresenting: holdOpen)
-                    .frame(width: 28, height: 28)
-                    .help(tr("เลือกลำโพงหรือหูฟัง", "Choose speakers or headphones"))
-            }
+        HStack(spacing: 26) {
+            ControlButton(symbol: "backward.fill", size: 15) { music.previous() }
+            ControlButton(symbol: music.isPlaying ? "pause.fill" : "play.fill", size: 22) { music.togglePlayPause() }
+            ControlButton(symbol: "forward.fill", size: 15) { music.next() }
         }
         .frame(maxWidth: .infinity)
     }
