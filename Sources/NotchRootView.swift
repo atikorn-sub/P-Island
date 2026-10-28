@@ -228,7 +228,7 @@ struct OpenNotchView: View {
                 case .shelf: ShelfView(shelf: state.shelf)
                 case .clipboard: ClipboardView(clipboard: state.clipboard)
                 case .timer: TimerView(timer: state.timer)
-                case .mirror: MirrorView()
+                case .mirror: MirrorView(controls: state.controls)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

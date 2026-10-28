@@ -106,6 +106,20 @@ final class SystemControls: ObservableObject {
         brightness = v
     }
 
+    /// Brightness before the mirror's light turned it up, to put back afterwards.
+    private var brightnessBeforeBoost: Float?
+
+    /// Full brightness while the mirror's light is on; the previous level comes back after (also on quit).
+    func boostBrightness(_ on: Bool) {
+        if on {
+            if brightnessBeforeBoost == nil { brightnessBeforeBoost = brightness }
+            setBrightness(1)
+        } else if let saved = brightnessBeforeBoost {
+            setBrightness(saved)
+            brightnessBeforeBoost = nil
+        }
+    }
+
     private func loadDisplayServices() {
         guard let handle = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY) else { return }
         if let get = dlsym(handle, "DisplayServicesGetBrightness") {

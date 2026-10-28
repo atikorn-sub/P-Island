@@ -13,9 +13,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var launchItem: NSMenuItem!
 
     /// Another copy (e.g. a second P Island.app elsewhere on disk) asks the running one to come forward.
+    /// `kill` / `pkill` quit through the normal path, so clean-up (like the mirror light's brightness) still runs.
+    private var termSource: DispatchSourceSignal?
     private static let showSettingsNotification = Notification.Name("com.atikorn.islet.showSettings")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        signal(SIGTERM, SIG_IGN)
+        termSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        termSource?.setEventHandler { NSApp.terminate(nil) }
+        termSource?.resume()
         // Only one P Island at a time: two would stack two notches on top of each other.
         let others = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
             .filter { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
@@ -222,6 +228,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// Opening P Island again (Launchpad, Finder, Spotlight) while it runs shows Settings, so it isn't a dead click.
+    func applicationWillTerminate(_ notification: Notification) {
+        state?.controls.boostBrightness(false)
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         settingsWindow?.show()
         return false

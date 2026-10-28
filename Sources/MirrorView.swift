@@ -2,18 +2,34 @@ import AVFoundation
 import SwiftUI
 
 /// The front camera as a mirror, for a quick look before a call. The camera runs only while this tab
-/// is showing, and nothing is recorded or saved.
+/// is showing, and nothing is recorded or saved. The light button turns the panel into a ring light:
+/// a warm white frame around the picture, with the screen at full brightness until it's switched off.
 struct MirrorView: View {
+    let controls: SystemControls
     @StateObject private var camera = MirrorCamera()
+    @AppStorage("mirrorLight") private var light = false
+
+    private static let warmWhite = Color(red: 1, green: 0.96, blue: 0.9)
 
     var body: some View {
         Group {
             switch camera.state {
             case .running:
-                CameraPreview(session: camera.session)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
+                ZStack {
+                    if light {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .fill(Self.warmWhite)
+                            .shadow(color: Self.warmWhite.opacity(0.9), radius: 18)
+                            .transition(.opacity)
+                    }
+                    CameraPreview(session: camera.session)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(Color.white.opacity(light ? 0 : 0.12), lineWidth: 1))
+                        .padding(light ? 18 : 0)
+                }
+                .overlay(alignment: .bottomTrailing) { lightButton.padding(light ? 26 : 8) }
+                .animation(.spring(response: 0.4, dampingFraction: 0.75), value: light)
             case .starting:
                 ProgressView().controlSize(.small)
             case .denied:
@@ -24,8 +40,30 @@ struct MirrorView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { camera.start() }
-        .onDisappear { camera.stop() }
+        .onAppear {
+            camera.start()
+            if light { controls.boostBrightness(true) }
+        }
+        .onDisappear {
+            camera.stop()
+            controls.boostBrightness(false)
+        }
+    }
+
+    private var lightButton: some View {
+        Button {
+            light.toggle()
+            controls.boostBrightness(light)
+        } label: {
+            Image(systemName: light ? "lightbulb.fill" : "lightbulb")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(light ? Color.orange : Color.white)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(.black.opacity(0.45)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(light ? tr("ปิดไฟ", "Light off") : tr("เปิดไฟส่องหน้า", "Light on"))
     }
 
     private func message(_ text: String, button: String?, action: @escaping () -> Void) -> some View {
