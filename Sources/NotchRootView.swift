@@ -28,13 +28,13 @@ struct NotchRootView: View {
         ZStack(alignment: .top) {
             if open {
                 OpenNotchView(state: state)
-                    .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .top)))
+                    .transition(.opacity.combined(with: .scale(scale: 0.82, anchor: .top)))
             } else if case .alert(let alert) = activity {
                 AlertNotchView(state: state, alert: alert)
-                    .transition(.opacity)
+                    .transition(.opacity.combined(with: .scale(scale: 0.85, anchor: .top)))
             } else if activity == .miniPlayer {
                 MiniPlayerBar(state: state)
-                    .transition(.opacity)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .top)))
             } else {
                 ClosedNotchView(state: state)
                     .transition(.opacity)
@@ -54,8 +54,10 @@ struct NotchRootView: View {
         .clipShape(shape)
         .shadow(color: .black.opacity(open || alerting ? 0.5 : 0), radius: 16, y: 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .animation(.spring(response: 0.42, dampingFraction: 0.8), value: open)
-        .animation(.spring(response: 0.4, dampingFraction: 0.82), value: state.closedActivity)
+        // Opening overshoots a little and wobbles into place, like jelly; closing tucks back in
+        // with only a hint of bounce so the panel never looks smaller than the notch.
+        .animation(open ? .spring(response: 0.52, dampingFraction: 0.6) : .spring(response: 0.42, dampingFraction: 0.78), value: open)
+        .animation(.spring(response: 0.46, dampingFraction: 0.66), value: state.closedActivity)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: settings.sizeScale)
         .environment(\.colorScheme, .dark)
         .environment(\.locale, Lang.locale)
