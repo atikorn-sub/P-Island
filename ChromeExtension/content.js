@@ -40,7 +40,8 @@ function readQueue() {
   const current = rows.findIndex((el) => el.hasAttribute('selected'));
   if (current < 0) return [];
   return rows.slice(current + 1, current + 26).map((el, i) => {
-    const src = el.querySelector('img')?.src || '';
+    // main.js tags each row with its cover; the row's own <img> only loads once it's scrolled into view.
+    const src = el.getAttribute('data-pisland-art') || el.querySelector('img')?.src || '';
     return {
       index: current + 1 + i,
       title: label(el.querySelector('.song-title')),

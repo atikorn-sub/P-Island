@@ -167,21 +167,50 @@ private struct UpNextRow: View {
         .help(tr("เล่น \(item.title)", "Play \(item.title)"))
     }
 
-    @ViewBuilder private var thumbnail: some View {
-        let shape = RoundedRectangle(cornerRadius: 5, style: .continuous)
-        if let url = URL(string: item.artworkURL), !item.artworkURL.isEmpty {
-            AsyncImage(url: url) { image in
-                image.resizable().aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Color.white.opacity(0.08)
-            }
+    private var thumbnail: some View {
+        RemoteCover(url: item.artworkURL)
             .frame(width: 30, height: 30)
-            .clipShape(shape)
-        } else {
-            shape.fill(Color.white.opacity(0.08))
-                .frame(width: 30, height: 30)
-                .overlay(Image(systemName: "music.note").font(.system(size: 11)).foregroundStyle(.white.opacity(0.4)))
+            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+    }
+}
+
+/// A small cover from the web. Loaded once and kept, so scrolling and hovering never refetch it;
+/// a load cut short (the row scrolled away) is simply tried again when the row comes back.
+struct RemoteCover: View {
+    let url: String
+    @State private var image: NSImage?
+
+    var body: some View {
+        ZStack {
+            Color.white.opacity(0.08)
+            if let image {
+                Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
+            } else {
+                Image(systemName: "music.note").font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
+            }
         }
+        .task(id: url) { image = await CoverCache.shared.image(for: url) }
+    }
+}
+
+actor CoverCache {
+    static let shared = CoverCache()
+    private var images: [String: NSImage] = [:]
+
+    func image(for url: String) async -> NSImage? {
+        if let cached = images[url] { return cached }
+        guard let u = URL(string: url), u.scheme == "https" else { return nil }
+        for attempt in 0..<3 {
+            if attempt > 0 { try? await Task.sleep(for: .seconds(attempt)) }
+            if Task.isCancelled { return nil }
+            if let (data, _) = try? await URLSession.shared.data(from: u), let image = NSImage(data: data) {
+                if images.count > 200 { images.removeAll() }
+                images[url] = image
+                return image
+            }
+        }
+        NSLog("%@", "Islet music: cover failed to load: \(url)")
+        return nil
     }
 }
 
