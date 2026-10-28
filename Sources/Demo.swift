@@ -53,11 +53,23 @@ enum Demo {
     /// `--demo-alerts` (or the menu bar item): one of each new notch card, with sample data.
     /// `--showcase`: a ~40 s tour for recording a preview video. Changes look and style along the way
     /// and puts the user's own choices back at the end.
+    /// `--showcase`: the portfolio clip. Drives the notch through its features on a fixed timetable and logs
+    /// each step ("Islet showcase: <name>"), so a cursor can be laid over the recording afterwards.
+    /// Everything it changes (look, tabs, shelf, timers) is put back at the end.
     static func runShowcase(controller: NotchController, state: NotchState) {
         let settings = state.settings
-        let saved = (settings.closedStyle, settings.notchStyle)
+        let defaults = UserDefaults.standard
+        let saved = (settings.closedStyle, settings.notchStyle, settings.lyricsInSlimBar,
+                     defaults.string(forKey: "homeSideTab"), defaults.string(forKey: "timerMode"), settings.songPeek)
+        settings.songPeek = false // no "now playing" card popping up at launch
+        let shelfBefore = state.shelf.items.map(\.url)
         settings.closedStyle = "wings"
         settings.notchStyle = "black"
+        settings.lyricsInSlimBar = true
+        defaults.set("upNext", forKey: "homeSideTab")
+        defaults.set("timers", forKey: "timerMode")
+        var samples: [URL] = []
+
         var t = 1.5
         func step(_ seconds: Double, _ name: String, _ action: @escaping () -> Void) {
             DispatchQueue.main.asyncAfter(deadline: .now() + t) {
@@ -66,34 +78,81 @@ enum Demo {
             }
             t += seconds
         }
-        step(3, "wings") {}
-        step(3, "home") { controller.open(tab: .home, sticky: 120) }
-        step(2.2, "calendar") { state.tab = .calendar }
-        step(2.2, "shelf") { state.tab = .shelf }
-        step(2.2, "clipboard") { state.tab = .clipboard }
-        step(2.2, "timer") { state.tab = .timer }
-        step(1.5, "close") { controller.close(); state.tab = .home }
-        step(4, "slim bar") { settings.closedStyle = "mini" }
-        step(3.2, "song peek") {
-            settings.closedStyle = "wings"
-            state.showAlert(.nowPlaying(title: state.music.hasTrack ? state.music.title : "P Island",
-                                        artist: state.music.hasTrack ? state.music.artist : AppInfo.developer), seconds: 3)
+
+        // Open panel: Home, lyrics, calendar, shelf with its drop zones, timers.
+        step(2.5, "wings") {}
+        step(3.5, "home") { controller.open(tab: .home, sticky: 120) }
+        step(3.5, "lyrics") { defaults.set("lyrics", forKey: "homeSideTab") }
+        step(3, "calendar") { state.tab = .calendar }
+        step(2.2, "shelf") {
+            samples = makeSampleFiles()
+            state.shelf.add(samples)
+            state.tab = .shelf
         }
-        step(3, "volume") { state.showAlert(.volume(level: state.controls.volume, muted: false), seconds: 2.8) }
+        step(1.2, "drop: shelf") {
+            state.shelf.dropTargeting = true
+            state.shelf.hoveredZone = .shelf
+        }
+        step(1.1, "drop: airdrop") { state.shelf.hoveredZone = .airDrop }
+        step(1.1, "drop: zip") { state.shelf.hoveredZone = .zip }
+        step(1.2, "drop: shrink") { state.shelf.hoveredZone = .shrink }
+        step(2.6, "timers") {
+            state.shelf.hoveredZone = nil
+            state.shelf.dropTargeting = false
+            state.tab = .timer
+            state.timer.startCountdown(minutes: 4, name: tr("☕ ชงกาแฟ", "☕ Coffee"))
+            state.timer.startCountdown(minutes: 3, name: tr("🍜 บะหมี่", "🍜 Noodles"))
+        }
+        step(3, "pomodoro") {
+            defaults.set("pomodoro", forKey: "timerMode")
+            state.timer.startPomodoro()
+        }
+        step(1.2, "close") {
+            controller.close()
+            state.tab = .home
+        }
+
+        // Closed notch: live activities and cards.
+        step(2.8, "pomodoro wings") {}
+        step(2.8, "countdown") {
+            state.timer.stopPomodoro()
+            state.timer.countdowns.map(\.id).forEach(state.timer.remove)
+            state.calendar.demoUpcoming()
+        }
+        step(3.4, "download") {
+            state.calendar.endDemo()
+            state.downloads.demo(name: "P-Island-1.5.zip", seconds: 2.6)
+        }
+        step(3, "airpods") {
+            state.showAlert(.bluetooth(name: tr("AirPods Pro ของฉัน", "My AirPods Pro"), kind: .airpodsPro, connected: true,
+                                       battery: tr("L 80% · R 85% · เคส 60%", "L 80% · R 85% · Case 60%")), seconds: 2.8)
+        }
+        step(1.8, "caps lock") { state.flash(.capsLock(on: true), seconds: 1.6) }
         step(3.6, "notification") {
             state.showAlert(.notification(AppNotification(bundleID: MessagesReplier.bundleID, title: "P",
                                                           subtitle: "", body: tr("มีแอปใหม่ในพอร์ตแล้ว 🎉", "New app in the portfolio 🎉"),
                                                           date: Date()), replying: false), seconds: 3.4)
         }
-        step(3.2, "battery") { state.showAlert(.batteryEstimate(level: state.battery.level, minutes: 245), seconds: 3) }
-        step(3.5, "glass") {
+        step(2.6, "volume") { state.showAlert(.volume(level: state.controls.volume, muted: false), seconds: 2.4) }
+        step(4.5, "slim bar") { settings.closedStyle = "mini" }
+
+        // Finally the glass look.
+        step(3.8, "glass") {
+            settings.closedStyle = "wings"
             settings.notchStyle = "glass"
+            defaults.set("upNext", forKey: "homeSideTab")
             controller.open(tab: .home, sticky: 120)
         }
         step(1, "end") {
             controller.close()
             settings.closedStyle = saved.0
             settings.notchStyle = saved.1
+            settings.lyricsInSlimBar = saved.2
+            settings.songPeek = saved.5
+            defaults.set(saved.3, forKey: "homeSideTab")
+            defaults.set(saved.4, forKey: "timerMode")
+            state.shelf.remove(samples.filter { !shelfBefore.contains($0) })
+            samples.forEach { try? FileManager.default.removeItem(at: $0) }
         }
     }
 
@@ -157,8 +216,18 @@ enum Demo {
             try? data.write(to: png)
         }
 
+        let sky = dir.appendingPathComponent("Sky.png")
+        let skyImage = NSImage(size: NSSize(width: 600, height: 400), flipped: false) { rect in
+            NSGradient(colors: [.systemTeal, .systemBlue, .systemIndigo])?.draw(in: rect, angle: -60)
+            return true
+        }
+        if let tiff = skyImage.tiffRepresentation,
+           let data = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
+            try? data.write(to: sky)
+        }
+
         let note = dir.appendingPathComponent("Notes.txt")
         try? "Dropped on the P Island shelf.\n".write(to: note, atomically: true, encoding: .utf8)
-        return [png, note]
+        return [png, sky, note]
     }
 }

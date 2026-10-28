@@ -279,6 +279,13 @@ final class CalendarManager: ObservableObject {
                                  isAllDay: false, color: .systemBlue, meetingURL: URL(string: "https://meet.google.com/"))
     }
 
+    /// Ends the demo meeting early.
+    func endDemo() {
+        demoUntil = nil
+        upcoming = nil
+        updateUpcoming()
+    }
+
     private func updateUpcoming() {
         if let until = demoUntil, until > Date() { return }
         guard status == .authorized else { return }

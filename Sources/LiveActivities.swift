@@ -163,6 +163,24 @@ final class DownloadMonitor: ObservableObject {
         scan()
     }
 
+    /// For the showcase: a made-up Safari download filling up over `seconds`, then the "finished" card.
+    func demo(name: String, seconds: Double) {
+        let fake = folder.appendingPathComponent(name + ".download")
+        let total: Int64 = 48_000_000
+        let steps = 12
+        for i in 0...steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + seconds * Double(i) / Double(steps)) {
+                let share: Double = 0.12 + 0.88 * Double(i) / Double(steps)
+                let done = Int64(Double(total) * share)
+                self.downloads = [Download(partial: fake, name: name, bytes: done, total: total)]
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds + 0.3) {
+            self.downloads = []
+            self.onFinished?(self.folder.appendingPathComponent(name))
+        }
+    }
+
     func stop() {
         source?.cancel()
         source = nil
