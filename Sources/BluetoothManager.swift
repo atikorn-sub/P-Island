@@ -15,6 +15,8 @@ final class BluetoothManager: NSObject {
     private var thread: Thread?
     /// Devices already connected at launch are reported to us too; stay quiet about those.
     private var quietUntil = Date.distantFuture
+    /// Last time each device's connect or disconnect was announced, so one that keeps dropping doesn't repeat itself.
+    private var lastAnnounced: [String: Date] = [:]
 
     func start() {
         guard thread == nil else { return }
@@ -37,9 +39,14 @@ final class BluetoothManager: NSObject {
 
     @objc private func deviceConnected(_ note: IOBluetoothUserNotification, device: IOBluetoothDevice) {
         let address = device.addressString ?? UUID().uuidString
+        guard Self.isAnnounceable(device) else {
+            NSLog("%@", "Islet bluetooth: skipped connect of \(Self.describe(device))")
+            return
+        }
         disconnectNotifications[address] = device.register(forDisconnectNotification: self,
                                                            selector: #selector(deviceDisconnected(_:device:)))
-        guard Date() > quietUntil else { return }
+        guard Date() > quietUntil, shouldAnnounce(address, connected: true) else { return }
+        NSLog("%@", "Islet bluetooth: connected \(Self.describe(device))")
         // Battery levels arrive a moment after the connection.
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
             self?.onEvent?(Self.name(of: device), Self.kind(of: device), true, Self.battery(of: device))
@@ -48,7 +55,10 @@ final class BluetoothManager: NSObject {
 
     @objc private func deviceDisconnected(_ note: IOBluetoothUserNotification, device: IOBluetoothDevice) {
         note.unregister()
-        if let address = device.addressString { disconnectNotifications[address] = nil }
+        let address = device.addressString ?? ""
+        disconnectNotifications[address] = nil
+        guard shouldAnnounce(address, connected: false) else { return }
+        NSLog("%@", "Islet bluetooth: disconnected \(Self.describe(device))")
         DispatchQueue.main.async { [weak self] in
             self?.onEvent?(Self.name(of: device), Self.kind(of: device), false, nil)
         }
@@ -56,6 +66,31 @@ final class BluetoothManager: NSObject {
 
     private static func name(of device: IOBluetoothDevice) -> String {
         device.name ?? device.nameOrAddress ?? "Bluetooth device"
+    }
+
+    /// Only things people connect on purpose: paired, named headphones, speakers, keyboards, mice,
+    /// trackpads and controllers. macOS itself briefly connects nameless or unpaired devices (iPhone and
+    /// Apple Watch for Continuity and unlocking, background services) every so often; those stay quiet.
+    private static func isAnnounceable(_ device: IOBluetoothDevice) -> Bool {
+        guard device.isPaired(), let name = device.name, !name.isEmpty else { return false }
+        if name.lowercased().contains("airpods") { return true }
+        switch device.deviceClassMajor {
+        case UInt32(kBluetoothDeviceClassMajorAudio), UInt32(kBluetoothDeviceClassMajorPeripheral): return true
+        default: return false
+        }
+    }
+
+    /// Each device's connects (and disconnects) at most once a minute, so one that keeps dropping stays quiet.
+    private func shouldAnnounce(_ address: String, connected: Bool) -> Bool {
+        let key = "\(address)|\(connected)"
+        let now = Date()
+        if let last = lastAnnounced[key], now.timeIntervalSince(last) < 60 { return false }
+        lastAnnounced[key] = now
+        return true
+    }
+
+    private static func describe(_ device: IOBluetoothDevice) -> String {
+        "'\(device.name ?? "<no name>")' \(device.addressString ?? "-") paired=\(device.isPaired()) class=\(device.deviceClassMajor)/\(device.deviceClassMinor)"
     }
 
     private static func kind(of device: IOBluetoothDevice) -> BluetoothKind {
