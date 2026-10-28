@@ -38,9 +38,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.4</string>
+	<string>1.5</string>
 	<key>CFBundleVersion</key>
-	<string>5</string>
+	<string>6</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
@@ -51,8 +51,6 @@
 	<string>P Island listens to what your Mac is playing so the notch waveform moves with the music. Nothing is recorded or saved.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>P Island shows when AirPods and other Bluetooth devices connect, with their battery levels.</string>
-	<key>NSRemindersFullAccessUsageDescription</key>
-	<string>P Island shows today's reminders in the notch and lets you tick them off.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>P Island shows your events in the notch and reminds you before meetings.</string>
 	<key>NSCameraUsageDescription</key>
@@ -61,6 +59,8 @@
 	<string>P Island watches your Downloads folder to show download progress in the notch. It only looks at file names and sizes.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>P Island shows today's reminders in the notch and lets you tick them off.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>P Island turns speech in your audio and video files into text, only when you ask.</string>
 </dict>

@@ -14,7 +14,7 @@ Music, notifications, files, calendar and more — right where the notch is.
 
 **English** · [ภาษาไทย](README.th.md)
 
-[**⬇︎ Download P Island 1.4**](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.4.zip)
+[**⬇︎ Download P Island 1.5**](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.5.zip)
 
 </div>
 
@@ -29,10 +29,10 @@ Move the pointer to the notch and it opens into a small panel. While it's closed
 | 🎵 **Music** | Apple Music, Spotify and YouTube Music (Chrome). Cover, title, progress you can drag, play/pause/skip, and a soft ambient light in the cover's colours. **Up Next** (tap a song to play it) and **synced lyrics** that scroll with the song. Choose speakers, headphones or an AirPlay TV right from the player. Swipe sideways on the closed notch to skip. Optional slim bar across the menu bar that can show the line being sung. |
 | 🔔 **Notifications** | Other apps' notifications drop down from the notch. Reply to iMessage without leaving what you're doing. Stays quiet while a Focus is on. |
 | 📂 **Shelf** | Drag files to the notch and drop them on a zone: **keep on the shelf, AirDrop, zip, or shrink images** for chat. Pick several and drag them out together, copy them or their paths, or convert: images ↔ PNG/JPEG/HEIC/PDF, video → MP4/MOV/M4A, Word/RTF → PDF, speech → text. Real previews for pictures, PDFs and videos. Also *Open With › P Island* and `open -a "P Island" file`. |
-| 📅 **Calendar & weather** | Month view, today's events, and a **Join** button a minute before Zoom, Meet, Teams, FaceTime or Webex meetings. Current weather and a 3-day forecast. |
+| 📅 **Calendar, reminders & weather** | Month view, step through days, today's events and a **Join** button a minute before Zoom, Meet, Teams, FaceTime or Webex meetings. **Reminders** you can tick off right from the notch. Current weather and a 3-day forecast. |
 | 📋 **Clipboard** | The last 40 things you copied, searchable. Kept in memory only; password managers are skipped. |
 | ⏱ **Timers** | Several named timers at once (quick starts for coffee, noodles, laundry…), **Pomodoro** with automatic breaks, and a stopwatch with laps. A progress ring on the closed notch. |
-| ✨ **Live Activities** | Download progress from Safari, Chrome and Firefox; a flash when an app starts using the camera or microphone; Caps Lock on/off. |
+| ✨ **Live Activities** | A countdown to your next event in its last 10 minutes; download progress from Safari, Chrome and Firefox; a flash when an app starts using the camera or microphone; Caps Lock on/off. |
 | 🪞 **Mirror** | Your front camera in the notch for a quick check before a call, with a ring light that brightens your face. |
 | 🔋 **System** | Battery level in green / orange / red, low-battery and fully-charged alerts, time left on battery. Volume and brightness sliders in the notch. AirPods connecting, with battery per bud. |
 | 🎨 **Make it yours** | Black or glass look (real Liquid Glass on macOS 26), four sizes, Thai or English, shortcuts <kbd>⌃⌥I</kbd> and <kbd>⌃⌥T</kbd>, swipe between tabs. Tells you when a new version is out. |
@@ -52,7 +52,7 @@ Screenshots: put PNGs in docs/screenshots/ and uncomment this block.
 
 **You need:** macOS 14 Sonoma or later, on any Mac (Apple silicon or Intel). A notch is nice but not required.
 
-1. **Download** [`P-Island-1.4.zip`](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.4.zip).
+1. **Download** [`P-Island-1.5.zip`](https://github.com/atikorn-sub/P-Island/raw/main/download/P-Island-1.5.zip).
 2. **Double-click the `.zip`** to unzip it, then **drag P Island into Applications**.
 3. **Open P Island** from Applications or Launchpad.
 4. **The first time, macOS blocks it.** You'll see *"P Island" Not Opened — Apple could not verify "P Island" is free of malware…* This is expected, see [Why does macOS block it?](#why-does-macos-block-it) below. To allow it once:
@@ -86,6 +86,7 @@ You can read every line of the code in this repository, and P Island only goes o
 |---|---|---|
 | **Full Disk Access** | Other apps' notifications, replying to iMessage, knowing when Focus is on | Click *Open Settings*, drag P Island from the Finder window into the list, switch it on |
 | **Calendar** | Events, month view, meeting Join button | Click *Allow* |
+| **Reminders** | Today's reminders, ticking them off | Click *Allow* |
 | **Bluetooth** | AirPods / device connect alerts | Click *Allow* |
 | **Automation** (Music, Spotify, Messages) | Reading and controlling music, sending replies | Asked the first time each is used |
 | **Speech Recognition** | Turning audio files into text | Asked the first time you transcribe |
@@ -169,7 +170,7 @@ Builds are signed with a certificate named **P Island Developer** if your keycha
 - **Languages:** every string is Thai and English; dates follow the chosen language (Buddhist year in Thai).
 
 ```
-Sources/           Swift app (≈ 8,300 lines, 43 files)
+Sources/           Swift app (≈ 8,600 lines, 43 files)
 ChromeExtension/   YouTube Music companion (Manifest V3)
 Resources/         Info.plist, icon, localised permission prompts
 Design/            logo sources
