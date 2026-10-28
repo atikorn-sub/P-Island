@@ -4,9 +4,8 @@ import UniformTypeIdentifiers
 
 struct ShelfView: View {
     @ObservedObject var shelf: ShelfManager
-    @State private var shelfTargeted = false
-    @State private var airDropTargeted = false
 
+    // Drops are caught for the whole panel by NotchHostingView, which switches to the drop zones.
     var body: some View {
         if shelf.dropTargeting {
             DropZones(shelf: shelf)
@@ -29,7 +28,7 @@ struct ShelfView: View {
                     Text(tr("ลากไฟล์มาวางที่นี่", "Drop files here"))
                         .font(.system(size: 12, weight: .medium))
                 }
-                .foregroundStyle(.white.opacity(shelfTargeted ? 0.9 : 0.4))
+                .foregroundStyle(.white.opacity(0.4))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -46,12 +45,8 @@ struct ShelfView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.white.opacity(shelfTargeted ? 0.6 : 0.15),
-                              style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .strokeBorder(Color.white.opacity(0.15), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
         )
-        .onDrop(of: [.fileURL, .image], isTargeted: $shelfTargeted) { providers in
-            shelf.add(providers: providers)
-        }
     }
 
     /// With items picked: what to do with them. Otherwise: the AirDrop box and whole-shelf actions.
@@ -91,57 +86,41 @@ struct ShelfView: View {
             Text("AirDrop")
                 .font(.system(size: 11, weight: .medium))
         }
-        .foregroundStyle(airDropTargeted ? Color.white : Color.white.opacity(0.7))
+        .foregroundStyle(Color.white.opacity(0.7))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.blue.opacity(airDropTargeted ? 0.55 : 0.18))
+                .fill(Color.blue.opacity(0.18))
         )
         .contentShape(Rectangle())
         .onTapGesture { shelf.airDrop(shelf.items.map(\.url)) }
         .help(tr("ลากไฟล์มาวางเพื่อส่ง AirDrop หรือคลิกเพื่อส่งทุกไฟล์บนชั้นวาง", "Drop files to AirDrop them, or click to AirDrop the whole shelf"))
-        .onDrop(of: [.fileURL], isTargeted: $airDropTargeted) { providers in
-            DropZones.loadURLs(providers) { shelf.airDrop($0) }
-            return true
-        }
     }
 }
 
 /// While files are dragged to the notch: choose what happens to them by where they're dropped.
+/// The zone nearest the pointer lights up, so anywhere in the panel counts.
 struct DropZones: View {
     @ObservedObject var shelf: ShelfManager
 
     var body: some View {
         HStack(spacing: 10) {
-            DropZone(symbol: "tray.and.arrow.down.fill", title: tr("เก็บบนชั้นวาง", "Keep on Shelf"), tint: .white, wide: true,
-                     types: [.fileURL, .image]) { providers in
-                shelf.add(providers: providers)
-                shelf.dropTargeting = false
-            }
-            DropZone(symbol: "dot.radiowaves.left.and.right", title: "AirDrop", tint: .blue) { providers in
-                DropZones.loadURLs(providers) { shelf.airDrop($0) }
-            }
-            DropZone(symbol: "doc.zipper", title: tr("บีบอัด zip", "Zip"), tint: .orange) { providers in
-                DropZones.loadURLs(providers) { shelf.zip($0) }
-            }
-            DropZone(symbol: "photo.badge.arrow.down", title: tr("ย่อรูป", "Shrink images"), tint: .green) { providers in
-                DropZones.loadURLs(providers) { shelf.shrinkImages($0) }
-            }
+            zone(.shelf, "tray.and.arrow.down.fill", tr("เก็บบนชั้นวาง", "Keep on Shelf"), .white, wide: true)
+            zone(.airDrop, "dot.radiowaves.left.and.right", "AirDrop", .blue)
+            zone(.zip, "doc.zipper", tr("บีบอัด zip", "Zip"), .orange)
+            zone(.shrink, "photo.badge.arrow.down", tr("ย่อรูป", "Shrink images"), .green)
         }
+        .onDisappear { shelf.zoneFrames = [:] }
     }
 
-    /// File URLs from a drop, on the main queue.
-    static func loadURLs(_ providers: [NSItemProvider], completion: @escaping ([URL]) -> Void) {
-        let group = DispatchGroup()
-        var urls: [URL] = []
-        for p in providers {
-            group.enter()
-            _ = p.loadObject(ofClass: URL.self) { url, _ in
-                if let url { DispatchQueue.main.async { urls.append(url) } }
-                group.leave()
-            }
-        }
-        group.notify(queue: .main) { completion(urls) }
+    private func zone(_ kind: DropZoneKind, _ symbol: String, _ title: String, _ tint: Color, wide: Bool = false) -> some View {
+        DropZone(symbol: symbol, title: title, tint: tint, wide: wide, lit: shelf.hoveredZone == kind)
+            .background(GeometryReader { geo in
+                let frame = geo.frame(in: .global)
+                Color.clear
+                    .onAppear { shelf.zoneFrames[kind] = frame }
+                    .onChange(of: frame) { _, new in shelf.zoneFrames[kind] = new }
+            })
     }
 }
 
@@ -149,36 +128,31 @@ private struct DropZone: View {
     let symbol: String
     let title: String
     let tint: Color
-    var wide = false
-    var types: [UTType] = [.fileURL]
-    let onDrop: ([NSItemProvider]) -> Void
-    @State private var targeted = false
+    let wide: Bool
+    let lit: Bool
 
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: symbol)
-                .font(.system(size: targeted ? 28 : 24, weight: .medium))
+                .font(.system(size: lit ? 28 : 24, weight: .medium))
             Text(title)
                 .font(.system(size: 12, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
-        .foregroundStyle(targeted ? Color.white : Color.white.opacity(0.75))
+        .foregroundStyle(lit ? Color.white : Color.white.opacity(0.7))
         .frame(maxWidth: wide ? .infinity : 104, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(tint.opacity(targeted ? 0.45 : 0.14))
+                .fill(tint.opacity(lit ? 0.5 : 0.12))
+                .shadow(color: tint.opacity(lit ? 0.6 : 0), radius: 12)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(tint.opacity(targeted ? 0.9 : 0.35), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .strokeBorder(tint.opacity(lit ? 1 : 0.3), style: StrokeStyle(lineWidth: lit ? 2 : 1.5, dash: lit ? [] : [6, 4]))
         )
-        .scaleEffect(targeted ? 1.04 : 1)
-        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: targeted)
-        .onDrop(of: types, isTargeted: $targeted) { providers in
-            onDrop(providers)
-            return true
-        }
+        .scaleEffect(lit ? 1.05 : 1)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: lit)
     }
 }
 

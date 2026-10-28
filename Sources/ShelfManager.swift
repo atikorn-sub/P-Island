@@ -17,6 +17,10 @@ final class ShelfManager: ObservableObject {
     @Published var selection: Set<URL> = []
     /// A file drag is on its way to the notch: the shelf shows its drop zones.
     @Published var dropTargeting = false
+    /// The zone a drag would drop into right now (lit up).
+    @Published var hoveredZone: DropZoneKind?
+    /// Where each drop zone sits in the panel, measured from the top left; reported by the zones themselves.
+    var zoneFrames: [DropZoneKind: CGRect] = [:]
 
     var onAdded: ((Int) -> Void)?
 
@@ -37,38 +41,9 @@ final class ShelfManager: ObservableObject {
         onAdded?(fresh.count)
     }
 
-    /// Accepts file URLs, or raw images (e.g. dragged from a browser) which get saved to disk first.
-    @discardableResult
-    func add(providers: [NSItemProvider]) -> Bool {
-        let group = DispatchGroup()
-        let lock = NSLock()
-        var urls: [URL] = []
-        func collect(_ url: URL) {
-            lock.lock()
-            urls.append(url)
-            lock.unlock()
-        }
-        for provider in providers {
-            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                group.enter()
-                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) { item, _ in
-                    if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
-                        collect(url)
-                    } else if let url = item as? URL {
-                        collect(url)
-                    }
-                    group.leave()
-                }
-            } else if provider.canLoadObject(ofClass: NSImage.self) {
-                group.enter()
-                _ = provider.loadObject(ofClass: NSImage.self) { image, _ in
-                    if let image = image as? NSImage, let url = Self.saveImage(image) { collect(url) }
-                    group.leave()
-                }
-            }
-        }
-        group.notify(queue: .main) { self.add(urls) }
-        return !providers.isEmpty
+    /// Pictures dropped without a file behind them (e.g. from a web page), saved to disk first.
+    func addImages(_ images: [NSImage]) {
+        add(images.compactMap(Self.saveImage))
     }
 
     func remove(_ item: ShelfItem) {

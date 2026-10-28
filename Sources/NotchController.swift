@@ -57,7 +57,7 @@ final class NotchController {
 
     init(state: NotchState) {
         self.state = state
-        let host = NSHostingView(rootView: NotchRootView(state: state))
+        let host = NotchHostingView(state: state)
         host.sizingOptions = []
         host.safeAreaRegions = []
         panel.contentView = host
