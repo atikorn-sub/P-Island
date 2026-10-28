@@ -65,11 +65,12 @@ enum NotchAlert: Equatable {
     case bluetooth(name: String, kind: BluetoothKind, connected: Bool, battery: String?)
     case notification(AppNotification, replying: Bool)
     case info(symbol: String, title: String, subtitle: String)
+    case update(version: String, page: URL)
 
     /// Cards with controls: hovering them keeps them open instead of opening the full panel.
     var isInteractive: Bool {
         switch self {
-        case .volume, .brightness, .meeting, .notification: return true
+        case .volume, .brightness, .meeting, .notification, .update: return true
         default: return false
         }
     }
@@ -129,6 +130,7 @@ final class NotchState: ObservableObject {
     let notifications = NotificationsManager()
     let audioLevels = AudioLevelMonitor()
     let focus = FocusMonitor()
+    let updates = UpdateChecker()
 
     /// A Focus is on and the user wants P Island to stay quiet during it.
     var isQuiet: Bool { settings.respectFocus && focus.isActive }

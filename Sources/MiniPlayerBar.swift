@@ -6,11 +6,14 @@ struct MiniPlayerBar: View {
     @ObservedObject var state: NotchState
     @ObservedObject private var music: MusicManager
     @ObservedObject private var timer: TimerManager
+    @ObservedObject private var lyrics: LyricsManager
+    @AppStorage("lyricsInSlimBar") private var showLyrics = true
 
     init(state: NotchState) {
         self.state = state
         music = state.music
         timer = state.timer
+        lyrics = state.music.lyrics
     }
 
     var body: some View {
@@ -19,10 +22,13 @@ struct MiniPlayerBar: View {
         HStack(spacing: 0) {
             HStack(spacing: 7) {
                 ArtworkView(image: music.artwork, trackID: music.trackID, size: h * 0.6, radius: 4)
-                Text(music.artist.isEmpty ? music.title : "\(music.title) — \(music.artist)")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
-                    .lineLimit(1)
+                if showLyrics && lyrics.status == .synced {
+                    TimelineView(.periodic(from: .now, by: 0.25)) { ctx in
+                        lyricLine(lyrics.currentIndex(at: music.position(at: ctx.date)))
+                    }
+                } else {
+                    songName
+                }
                 Spacer(minLength: 0)
             }
             .padding(.leading, 10)
@@ -57,6 +63,34 @@ struct MiniPlayerBar: View {
         .padding(.horizontal, NotchState.closedTopRadius)
         .frame(width: state.closedSize.width, height: h)
         .foregroundStyle(.white)
+    }
+
+    private var songName: some View {
+        Text(music.artist.isEmpty ? music.title : "\(music.title) — \(music.artist)")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.92))
+            .lineLimit(1)
+    }
+
+    /// The line being sung, rolling up into place when the next one starts; the song name before the first line.
+    @ViewBuilder private func lyricLine(_ index: Int?) -> some View {
+        let text = index.map { lyrics.lines[$0].text } ?? ""
+        ZStack(alignment: .leading) {
+            if text.isEmpty {
+                songName.transition(.opacity)
+            } else {
+                Text(text)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .id(index ?? -1)
+                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
+                                            removal: .move(edge: .top).combined(with: .opacity)))
+            }
+        }
+        .clipped()
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: index)
     }
 }
 

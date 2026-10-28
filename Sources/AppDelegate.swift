@@ -136,6 +136,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         bluetooth.start()
 
+        state.updates.onNewVersion = { [weak state] release in
+            state?.showAlert(.update(version: release.version, page: release.page), seconds: 12)
+        }
+        state.updates.startAutomaticChecks { [weak settings] in settings?.checkUpdates ?? false }
+
         let permissionsModel = PermissionsModel(state: state) { [weak self] in self?.bluetooth.start() }
         settingsWindow = SettingsWindowController(state: state, permissions: permissionsModel)
         state.showSettings = { [weak self] pane in

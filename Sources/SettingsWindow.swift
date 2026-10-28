@@ -145,7 +145,7 @@ struct SettingsView: View {
         case .calendar: CalendarWeatherPane(settings: settings, calendar: state.calendar, weather: state.weather)
         case .clipboard: ClipboardPane(settings: settings, clipboard: state.clipboard)
         case .permissions: PermissionsPane(model: permissions, settings: settings)
-        case .about: AboutPane()
+        case .about: AboutPane(settings: settings, updates: state.updates)
         }
     }
 }
@@ -218,6 +218,9 @@ private struct GeneralPane: View {
                                 isOn: $settings.launchAtLogin)
                 DescribedToggle(title: tr("สั่นที่แทร็กแพด", "Trackpad haptics"), detail: tr("สั่นเบา ๆ ตอนรอยบากกางออก", "A light tap when the notch opens"),
                                 isOn: $settings.haptics)
+                DescribedToggle(title: tr("ตรวจหาเวอร์ชันใหม่อัตโนมัติ", "Check for updates automatically"),
+                                detail: tr("วันละครั้งจาก GitHub ถ้ามีเวอร์ชันใหม่ รอยบากจะบอก", "Once a day from GitHub; the notch tells you when a new version is out"),
+                                isOn: $settings.checkUpdates)
             }
             Section(tr("ปุ่มลัด", "Shortcuts")) {
                 LabeledContent(tr("เปิด/ปิดรอยบาก", "Open/close the notch"), value: "⌃⌥I")
@@ -287,6 +290,13 @@ private struct MusicPane: View {
                                 isOn: $settings.ambientGlow)
                 DescribedToggle(title: tr("พลิกปกเพลงตอนเปลี่ยนเพลง", "Flip the cover on song change"), detail: tr("ปกหมุนเปลี่ยนเป็นปกใหม่ครั้งเดียวต่อเพลง", "The cover turns over to the new one, once per song"),
                                 isOn: $settings.artworkFlip)
+                DescribedToggle(title: tr("เนื้อเพลง", "Lyrics"),
+                                detail: tr("เนื้อเพลงที่วิ่งตามเพลงข้างตัวเล่นเพลง จาก LRCLIB (ส่งแค่ชื่อเพลง ศิลปิน และความยาวเพลง)", "Lyrics that follow the song beside the player, from LRCLIB (only the title, artist and length are sent)"),
+                                isOn: $settings.lyrics)
+                DescribedToggle(title: tr("เนื้อเพลงบนแถบเพลงแบบแคบ", "Lyrics in the slim bar"),
+                                detail: tr("ท่อนที่กำลังร้องแทนชื่อเพลง", "The line being sung instead of the song name"),
+                                isOn: $settings.lyricsInSlimBar)
+                    .disabled(!settings.lyrics)
                 DescribedToggle(title: tr("คลื่นเสียงตามเพลงจริง", "Live waveform"),
                                 detail: tr("แท่งบนรอยบากขยับตามเสียงที่เครื่องเล่น (ขอสิทธิ์ System Audio Recording)", "The bars follow what your Mac is playing (asks for System Audio Recording)"),
                                 isOn: $settings.liveWaveform)
@@ -379,6 +389,9 @@ private struct PermissionsPane: View {
 }
 
 private struct AboutPane: View {
+    @ObservedObject var settings: AppSettings
+    @ObservedObject var updates: UpdateChecker
+
     var body: some View {
         VStack(spacing: 12) {
             Spacer(minLength: 10)
@@ -393,6 +406,8 @@ private struct AboutPane: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
 
+            updateRow
+
             Divider().frame(width: 240).padding(.vertical, 6)
 
             VStack(spacing: 4) {
@@ -405,6 +420,7 @@ private struct AboutPane: View {
             VStack(spacing: 3) {
                 Text(tr("ผู้ช่วยเขียนโค้ด: Claude (Anthropic)", "Coding assistant: Claude (Anthropic)"))
                 Text(tr("ข้อมูลสภาพอากาศ: Open-Meteo.com (CC BY 4.0)", "Weather data: Open-Meteo.com (CC BY 4.0)"))
+                Text(tr("เนื้อเพลง: LRCLIB.net", "Lyrics: LRCLIB.net"))
                 Text(tr("สร้างด้วย Swift และ SwiftUI", "Built with Swift and SwiftUI"))
                 Text("© 2026 \(AppInfo.developer)")
             }
@@ -414,4 +430,28 @@ private struct AboutPane: View {
         }
         .frame(maxWidth: .infinity)
     }
+    @ViewBuilder private var updateRow: some View {
+        HStack(spacing: 8) {
+            switch updates.status {
+            case .checking:
+                ProgressView().controlSize(.small)
+                Text(tr("กำลังตรวจ…", "Checking…")).foregroundStyle(.secondary)
+            case .upToDate:
+                Label(tr("เป็นเวอร์ชันล่าสุดแล้ว", "You're up to date"), systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+            case .available(let release):
+                Label(tr("มีเวอร์ชัน \(release.version) แล้ว", "Version \(release.version) is out"), systemImage: "arrow.down.circle.fill")
+                    .foregroundStyle(.blue)
+                Button(tr("ดาวน์โหลด", "Download")) { NSWorkspace.shared.open(release.page) }
+            case .failed:
+                Text(tr("ตรวจไม่สำเร็จ ลองใหม่อีกครั้ง", "Couldn't check. Try again.")).foregroundStyle(.secondary)
+                Button(tr("ตรวจหาอัปเดต", "Check for Updates")) { updates.check() }
+            case .idle:
+                Button(tr("ตรวจหาอัปเดต", "Check for Updates")) { updates.check() }
+            }
+        }
+        .font(.callout)
+        .frame(height: 24)
+    }
+
 }

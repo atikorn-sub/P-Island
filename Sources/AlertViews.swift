@@ -60,6 +60,10 @@ struct AlertNotchView: View {
             Image(systemName: symbol)
                 .font(.system(size: 14 * rowScale, weight: .semibold))
                 .foregroundStyle(.blue)
+        case .update:
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 15 * rowScale, weight: .semibold))
+                .foregroundStyle(.blue)
         case .notification:
             EmptyView()
         }
@@ -89,6 +93,10 @@ struct AlertNotchView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 15 * rowScale))
                 .foregroundStyle(.green)
+        case .update(let version, _):
+            Text(version)
+                .font(.system(size: 13 * rowScale, weight: .bold, design: .rounded))
+                .foregroundStyle(.blue)
         case .notification:
             EmptyView()
         }
@@ -143,6 +151,30 @@ struct AlertNotchView: View {
                     color: .white)
         case .info(_, let title, let subtitle):
             message(title, subtitle, color: .white)
+        case .update(let version, let page):
+            HStack(spacing: 10 * s) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(tr("มี P Island เวอร์ชันใหม่", "A new P Island is out"))
+                        .font(.system(size: 11 * s))
+                        .foregroundStyle(.white.opacity(0.6))
+                    Text(tr("เวอร์ชัน \(version) พร้อมแล้ว", "Version \(version) is ready"))
+                        .font(.system(size: 13 * s, weight: .semibold))
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Button {
+                    NSWorkspace.shared.open(page)
+                    state.dismissAlert()
+                } label: {
+                    Text(tr("ดาวน์โหลด", "Download"))
+                        .font(.system(size: 12 * s, weight: .semibold))
+                        .padding(.horizontal, 14 * s)
+                        .padding(.vertical, 6 * s)
+                        .background(Capsule().fill(Color.blue))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 22 * s)
         case .notification:
             EmptyView()
         }

@@ -3,10 +3,17 @@ import SwiftUI
 struct HomeView: View {
     @ObservedObject var music: MusicManager
     @ObservedObject var calendar: CalendarManager
+    @ObservedObject private var lyrics: LyricsManager
+
+    init(music: MusicManager, calendar: CalendarManager) {
+        self.music = music
+        self.calendar = calendar
+        lyrics = music.lyrics
+    }
 
     var body: some View {
-        // Right column: what plays next while a song plays, the day's events when nothing does.
-        // A player that doesn't share its queue (Spotify) gets the whole panel.
+        // Right column: what plays next and the lyrics while a song plays, the day's events when nothing does.
+        // With neither a queue nor lyrics (say, Spotify and an unknown song) the player gets the whole panel.
         HStack(spacing: 18) {
             NowPlayingCard(music: music)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -14,15 +21,16 @@ struct HomeView: View {
                 Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
                 CalendarCard(calendar: calendar)
                     .frame(width: 180)
-            } else if !music.upNext.isEmpty {
+            } else if !music.upNext.isEmpty || MusicSideColumn.showsLyrics(lyrics.status) {
                 Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
-                UpNextList(music: music)
+                MusicSideColumn(music: music, lyrics: lyrics)
                     .frame(width: 210)
                     .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: music.hasTrack)
         .animation(.easeInOut(duration: 0.3), value: music.upNext.isEmpty)
+        .animation(.easeInOut(duration: 0.3), value: lyrics.status)
         .onAppear { calendar.reload() }
     }
 }
@@ -107,25 +115,122 @@ struct NowPlayingCard: View {
     }
 }
 
-// MARK: - Up Next
+// MARK: - Up Next and lyrics
 
-struct UpNextList: View {
+/// "Up Next" and "Lyrics" as two small tabs; just the one when only one has anything.
+struct MusicSideColumn: View {
     @ObservedObject var music: MusicManager
+    @ObservedObject var lyrics: LyricsManager
+    @AppStorage("homeSideTab") private var chosen = "upNext"
+
+    /// Lyrics found, or still being looked for.
+    static func showsLyrics(_ status: LyricsManager.Status) -> Bool {
+        status == .synced || status == .plain || status == .loading
+    }
 
     var body: some View {
+        let hasQueue = !music.upNext.isEmpty
+        let hasLyrics = Self.showsLyrics(lyrics.status)
+        let tab = !hasQueue ? "lyrics" : !hasLyrics ? "upNext" : chosen
         VStack(alignment: .leading, spacing: 6) {
-            Text(tr("ถัดไป", "Up Next"))
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.5))
-            ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(spacing: 2) {
-                    ForEach(music.upNext) { item in
-                        UpNextRow(item: item) { music.play(item) }
+            HStack(spacing: 4) {
+                if hasQueue { tabButton("upNext", tr("ถัดไป", "Up Next"), selected: tab == "upNext") }
+                if hasLyrics { tabButton("lyrics", tr("เนื้อเพลง", "Lyrics"), selected: tab == "lyrics") }
+            }
+            Group {
+                if tab == "lyrics" {
+                    LyricsView(music: music, lyrics: lyrics)
+                } else {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        LazyVStack(spacing: 2) {
+                            ForEach(music.upNext) { item in
+                                UpNextRow(item: item) { music.play(item) }
+                            }
+                        }
                     }
                 }
             }
+            .transition(.opacity)
         }
         .frame(maxHeight: .infinity, alignment: .top)
+        .animation(.easeInOut(duration: 0.2), value: tab)
+    }
+
+    private func tabButton(_ id: String, _ title: String, selected: Bool) -> some View {
+        Button { chosen = id } label: {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(selected ? 0.95 : 0.45))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(Color.white.opacity(selected ? 0.14 : 0)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Synced lyrics scroll by themselves with the line being sung bright and centred (tap a line to jump
+/// there); plain lyrics are just scrollable text.
+struct LyricsView: View {
+    @ObservedObject var music: MusicManager
+    @ObservedObject var lyrics: LyricsManager
+
+    var body: some View {
+        switch lyrics.status {
+        case .synced:
+            TimelineView(.periodic(from: .now, by: 0.25)) { ctx in
+                SyncedLyrics(music: music, lines: lyrics.lines, current: lyrics.currentIndex(at: music.position(at: ctx.date)))
+            }
+        case .plain:
+            ScrollView(.vertical, showsIndicators: false) {
+                Text(lyrics.plainText)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        case .loading:
+            ProgressView().controlSize(.small).frame(maxWidth: .infinity, maxHeight: .infinity)
+        default:
+            EmptyView()
+        }
+    }
+}
+
+private struct SyncedLyrics: View {
+    let music: MusicManager
+    let lines: [LyricLine]
+    let current: Int?
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 7) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { i, line in
+                        let isCurrent = i == current
+                        Text(line.text.isEmpty ? "♪" : line.text)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white.opacity(isCurrent ? 1 : 0.4))
+                            .scaleEffect(isCurrent ? 1.04 : 1, anchor: .leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .contentShape(Rectangle())
+                            .onTapGesture { music.seek(to: line.time) }
+                            .id(i)
+                    }
+                }
+                .padding(.vertical, 50)
+                .animation(.easeOut(duration: 0.25), value: current)
+            }
+            // Lines fade in at the bottom and out at the top.
+            .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.22),
+                                         .init(color: .black, location: 0.78), .init(color: .clear, location: 1)],
+                                 startPoint: .top, endPoint: .bottom))
+            .onChange(of: current) { _, new in
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { proxy.scrollTo(new ?? 0, anchor: .center) }
+            }
+            .onAppear { proxy.scrollTo(current ?? 0, anchor: .center) }
+        }
     }
 }
 

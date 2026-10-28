@@ -49,6 +49,18 @@ final class AppSettings: ObservableObject {
     @Published var ambientGlow: Bool {
         didSet { defaults.set(ambientGlow, forKey: "ambientGlow") }
     }
+    /// Time-synced lyrics from LRCLIB beside the player.
+    @Published var lyrics: Bool {
+        didSet { defaults.set(lyrics, forKey: "lyrics") }
+    }
+    /// The line being sung replaces the song name in the slim bar.
+    @Published var lyricsInSlimBar: Bool {
+        didSet { defaults.set(lyricsInSlimBar, forKey: "lyricsInSlimBar") }
+    }
+    /// Look for a newer P Island on GitHub once a day.
+    @Published var checkUpdates: Bool {
+        didSet { defaults.set(checkUpdates, forKey: "checkUpdates") }
+    }
     /// Album art flips over when the song changes (read by ArtworkView straight from UserDefaults).
     @Published var artworkFlip: Bool {
         didSet { defaults.set(artworkFlip, forKey: "artworkFlip") }
@@ -93,10 +105,14 @@ final class AppSettings: ObservableObject {
             "bluetoothAlerts": true, "meetingAlerts": true, "clipboardHistory": true,
             "appNotifications": true, "liveWaveform": false, "showPermissionsAtLaunch": true, "respectFocus": true,
             "artworkFlip": true, "notchStyle": "black", "glassTint": 0.25, "closedStyle": "wings", "ambientGlow": true,
+            "lyrics": true, "lyricsInSlimBar": true, "checkUpdates": true,
         ])
         notchStyle = defaults.string(forKey: "notchStyle") ?? "black"
         closedStyle = defaults.string(forKey: "closedStyle") ?? "wings"
         ambientGlow = defaults.bool(forKey: "ambientGlow")
+        lyrics = defaults.bool(forKey: "lyrics")
+        lyricsInSlimBar = defaults.bool(forKey: "lyricsInSlimBar")
+        checkUpdates = defaults.bool(forKey: "checkUpdates")
         glassTint = defaults.double(forKey: "glassTint")
         artworkFlip = defaults.bool(forKey: "artworkFlip")
         respectFocus = defaults.bool(forKey: "respectFocus")

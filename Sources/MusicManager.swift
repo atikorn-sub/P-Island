@@ -159,6 +159,8 @@ final class MusicManager: ObservableObject {
     private var pollWork: DispatchWorkItem?
 
     private let youtube = YouTubeMusicBridge()
+    /// Lyrics for whatever is playing.
+    private(set) lazy var lyrics = LyricsManager(music: self)
     private let queue = DispatchQueue(label: "islet.music", qos: .userInitiated)
     private var scripts: [String: NSAppleScript] = [:] // only touched on `queue`
 
@@ -183,6 +185,7 @@ final class MusicManager: ObservableObject {
             self?.refresh(after: 1.5)
         }
         refresh()
+        _ = lyrics
     }
 
     func position(at date: Date) -> Double {
