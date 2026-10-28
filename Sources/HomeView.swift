@@ -5,13 +5,17 @@ struct HomeView: View {
     @ObservedObject var calendar: CalendarManager
 
     var body: some View {
+        // While a song plays it gets the whole panel; the day's events come back when nothing plays.
         HStack(spacing: 18) {
             NowPlayingCard(music: music)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
-            CalendarCard(calendar: calendar)
-                .frame(width: 180)
+            if !music.hasTrack {
+                Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
+                CalendarCard(calendar: calendar)
+                    .frame(width: 180)
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: music.hasTrack)
         .onAppear { calendar.reload() }
     }
 }
