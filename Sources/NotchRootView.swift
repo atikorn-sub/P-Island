@@ -223,7 +223,7 @@ struct OpenNotchView: View {
                 .frame(height: max(state.notchSize.height, 30) / scale)
             Group {
                 switch state.tab {
-                case .home: HomeView(music: state.music, calendar: state.calendar, controls: state.controls)
+                case .home: HomeView(music: state.music, calendar: state.calendar) { state.holdOpen = $0 }
                 case .calendar: CalendarTabView(calendar: state.calendar, weather: state.weather)
                 case .shelf: ShelfView(shelf: state.shelf)
                 case .clipboard: ClipboardView(clipboard: state.clipboard)

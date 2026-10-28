@@ -269,7 +269,7 @@ final class NotchController {
         switch event.type {
         case .leftMouseDown:
             dragChangeCount = NSPasteboard(name: .drag).changeCount
-            if state.isOpen, !openRect.insetBy(dx: -6, dy: -6).contains(NSEvent.mouseLocation) {
+            if state.isOpen, !state.holdOpen, !openRect.insetBy(dx: -6, dy: -6).contains(NSEvent.mouseLocation) {
                 close()
             }
         case .leftMouseDragged:
@@ -301,6 +301,11 @@ final class NotchController {
         let p = NSEvent.mouseLocation
         if state.isOpen {
             if let until = stickyUntil, until > Date() { return }
+            if state.holdOpen {
+                closeWork?.cancel()
+                closeWork = nil
+                return
+            }
             if openRect.insetBy(dx: -8, dy: -8).contains(p) {
                 closeWork?.cancel()
                 closeWork = nil

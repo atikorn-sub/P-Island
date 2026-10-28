@@ -142,6 +142,8 @@ final class NotchState: ObservableObject {
     static let closedTopRadius: CGFloat = 6
     static let openTopRadius: CGFloat = 14
 
+    /// A menu from the panel (the sound output list) is up: leaving the panel's area mustn't close it.
+    var holdOpen = false
     /// Set by the controller: makes the panel take keyboard input (for typing a reply).
     var requestKeyboard: (() -> Void)?
     /// Set by the controller: opens the full panel (e.g. clicking the song in the slim bar).

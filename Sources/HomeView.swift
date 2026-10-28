@@ -1,31 +1,33 @@
+import AVKit
 import SwiftUI
 
 struct HomeView: View {
     @ObservedObject var music: MusicManager
     @ObservedObject var calendar: CalendarManager
     @ObservedObject private var lyrics: LyricsManager
-    let controls: SystemControls
+    /// Keeps the panel open while the sound output menu is up.
+    let holdOpen: (Bool) -> Void
 
-    init(music: MusicManager, calendar: CalendarManager, controls: SystemControls) {
+    init(music: MusicManager, calendar: CalendarManager, holdOpen: @escaping (Bool) -> Void) {
         self.music = music
         self.calendar = calendar
-        self.controls = controls
+        self.holdOpen = holdOpen
         lyrics = music.lyrics
     }
 
     var body: some View {
-        // Right column: what plays next, the lyrics and where the sound goes while a song plays;
-        // the day's events when nothing does.
+        // Right column: what plays next and the lyrics while a song plays, the day's events when nothing does.
+        // With neither a queue nor lyrics (say, Spotify and an unknown song) the player gets the whole panel.
         HStack(spacing: 18) {
-            NowPlayingCard(music: music)
+            NowPlayingCard(music: music, holdOpen: holdOpen)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if !music.hasTrack {
                 Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
                 CalendarCard(calendar: calendar)
                     .frame(width: 180)
-            } else {
+            } else if !music.upNext.isEmpty || MusicSideColumn.showsLyrics(lyrics.status) {
                 Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
-                MusicSideColumn(music: music, lyrics: lyrics, controls: controls)
+                MusicSideColumn(music: music, lyrics: lyrics)
                     .frame(width: 210)
                     .transition(.opacity)
             }
@@ -41,6 +43,7 @@ struct HomeView: View {
 
 struct NowPlayingCard: View {
     @ObservedObject var music: MusicManager
+    var holdOpen: (Bool) -> Void = { _ in }
 
     var body: some View {
         if music.hasTrack {
@@ -81,11 +84,20 @@ struct NowPlayingCard: View {
         }
     }
 
+    /// Previous / play / next in the middle, the sound output button (like Control Center's) at the right.
     private var controls: some View {
-        HStack(spacing: 26) {
-            ControlButton(symbol: "backward.fill", size: 15) { music.previous() }
-            ControlButton(symbol: music.isPlaying ? "pause.fill" : "play.fill", size: 22) { music.togglePlayPause() }
-            ControlButton(symbol: "forward.fill", size: 15) { music.next() }
+        ZStack {
+            HStack(spacing: 26) {
+                ControlButton(symbol: "backward.fill", size: 15) { music.previous() }
+                ControlButton(symbol: music.isPlaying ? "pause.fill" : "play.fill", size: 22) { music.togglePlayPause() }
+                ControlButton(symbol: "forward.fill", size: 15) { music.next() }
+            }
+            HStack {
+                Spacer()
+                AudioRouteButton(onPresenting: holdOpen)
+                    .frame(width: 28, height: 28)
+                    .help(tr("เลือกลำโพงหรือหูฟัง", "Choose speakers or headphones"))
+            }
         }
         .frame(maxWidth: .infinity)
     }
@@ -119,11 +131,10 @@ struct NowPlayingCard: View {
 
 // MARK: - Up Next and lyrics
 
-/// "Up Next", "Lyrics" and a speaker for the sound output, as small tabs; Up Next and Lyrics only when they have something.
+/// "Up Next" and "Lyrics" as two small tabs; just the one when only one has anything.
 struct MusicSideColumn: View {
     @ObservedObject var music: MusicManager
     @ObservedObject var lyrics: LyricsManager
-    let controls: SystemControls
     @AppStorage("homeSideTab") private var chosen = "upNext"
 
     /// Lyrics found, or still being looked for.
@@ -134,19 +145,14 @@ struct MusicSideColumn: View {
     var body: some View {
         let hasQueue = !music.upNext.isEmpty
         let hasLyrics = Self.showsLyrics(lyrics.status)
-        let available = (hasQueue ? ["upNext"] : []) + (hasLyrics ? ["lyrics"] : []) + ["output"]
-        let tab = available.contains(chosen) ? chosen : available[0]
+        let tab = !hasQueue ? "lyrics" : !hasLyrics ? "upNext" : chosen
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
                 if hasQueue { tabButton("upNext", Text(tr("ถัดไป", "Up Next")), selected: tab == "upNext") }
                 if hasLyrics { tabButton("lyrics", Text(tr("เนื้อเพลง", "Lyrics")), selected: tab == "lyrics") }
-                tabButton("output", Text(Image(systemName: "hifispeaker.fill")), selected: tab == "output")
-                    .help(tr("ลำโพงและหูฟัง", "Speakers & headphones"))
             }
             Group {
-                if tab == "output" {
-                    OutputPicker(controls: controls)
-                } else if tab == "lyrics" {
+                if tab == "lyrics" {
                     LyricsView(music: music, lyrics: lyrics)
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
@@ -175,66 +181,6 @@ struct MusicSideColumn: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-    }
-}
-
-/// Volume, and the speakers and headphones to choose from; the one playing has a tick.
-struct OutputPicker: View {
-    @ObservedObject var controls: SystemControls
-
-    var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: controls.muted || controls.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.6))
-                    .frame(width: 16)
-                LevelSlider(value: controls.muted ? 0 : controls.volume) { controls.setVolume($0) }
-                    .frame(height: 16)
-            }
-            .padding(.horizontal, 6)
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 2) {
-                    ForEach(controls.outputs) { output in
-                        OutputRow(output: output, selected: output.id == controls.currentOutput) {
-                            controls.setOutput(output)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct OutputRow: View {
-    let output: AudioOutput
-    let selected: Bool
-    let action: () -> Void
-    @State private var hovering = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: output.symbol)
-                    .font(.system(size: 13))
-                    .frame(width: 22)
-                    .foregroundStyle(selected ? Color.white : Color.white.opacity(0.6))
-                Text(output.name)
-                    .font(.system(size: 11.5, weight: selected ? .semibold : .medium))
-                    .lineLimit(1)
-                Spacer(minLength: 4)
-                if selected {
-                    Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
-                }
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 6)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(selected ? 0.12 : hovering ? 0.08 : 0)))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
     }
 }
 
@@ -620,5 +566,36 @@ struct EventRow: View {
                 .help(tr("เข้าร่วมประชุม", "Join meeting"))
             }
         }
+    }
+}
+
+/// The system's own sound output button, as in Control Center: it lists the Mac's speakers,
+/// headphones and AirPlay devices (TVs and speakers included) and switches the whole Mac's output.
+struct AudioRouteButton: NSViewRepresentable {
+    let onPresenting: (Bool) -> Void
+
+    func makeNSView(context: Context) -> AVRoutePickerView {
+        let picker = AVRoutePickerView()
+        picker.isRoutePickerButtonBordered = false
+        picker.setRoutePickerButtonColor(NSColor.white.withAlphaComponent(0.7), for: .normal)
+        picker.setRoutePickerButtonColor(.white, for: .normalHighlighted)
+        picker.setRoutePickerButtonColor(.systemBlue, for: .active)
+        picker.setRoutePickerButtonColor(.systemBlue, for: .activeHighlighted)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateNSView(_ nsView: AVRoutePickerView, context: Context) {
+        context.coordinator.onPresenting = onPresenting
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(onPresenting: onPresenting) }
+
+    final class Coordinator: NSObject, AVRoutePickerViewDelegate {
+        var onPresenting: (Bool) -> Void
+        init(onPresenting: @escaping (Bool) -> Void) { self.onPresenting = onPresenting }
+
+        func routePickerViewWillBeginPresentingRoutes(_ routePickerView: AVRoutePickerView) { onPresenting(true) }
+        func routePickerViewDidEndPresentingRoutes(_ routePickerView: AVRoutePickerView) { onPresenting(false) }
     }
 }
